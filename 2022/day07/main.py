@@ -8,6 +8,7 @@ def getRefCrntRoot(dct,path):
         return dct[path[0]]
     return getRefCrntRoot(dct[path[0]],path[1:])
 
+
 def print_tree(dct,indent = "  "):
     for i in dct:
         if isinstance(dct[i],dict):
@@ -89,7 +90,7 @@ def scenario2(fname):
 
 
 if __name__ == "__main__":
-    # scenario1("./input1")
-    # scenario1("./input")
+    scenario1("./input1")
+    scenario1("./input")
     scenario2("./input1")
     scenario2("./input")

@@ -1,6 +1,5 @@
 import sequtils
 import bitops
-import std/enumerate
 
 const NORTH:int = 1
 const SOUTH:int = 2
@@ -27,7 +26,6 @@ proc iterateOverCollums(board:seq[seq[int]],mask:var seq[seq[int]],col:int) =
     if board[i][col] > highest:
       setbit(mask[i][col],SOUTH)
       highest = board[i][col]
-
 
 proc iterateOverRows(board:seq[seq[int]],mask:var seq[seq[int]],row:int) =
   var highest = -1
@@ -63,9 +61,6 @@ proc checkInDir(board:seq[seq[int]],pos:Vec2,d:Vec2): int =
       break
     crnt = crnt + d #mode it in thedirection of the vector
   return result
-
-
-
 proc sonarWoods(board:seq[seq[int]]):int=
   for x in 1..<board.high:
     for y in 1..<board[0].high:
@@ -85,11 +80,9 @@ proc scenario1(fname:string): int =
 
 proc scenario2(fname:string): int = 
   var board:seq[seq[int]]
-  var mask:seq[seq[int]]
   for l in lines(fname):
     board.add(l.toSeq().map(proc (x:char):int = x.int-'0'.int))
   return sonarWoods(board)
-
 
 if isMainModule:
   echo scenario1("./input1")
