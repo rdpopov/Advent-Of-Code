@@ -38,7 +38,7 @@ fn build_rules(inp: &str) -> (HashMap<usize, Robot>, HashMap<usize, Vec<u32>>) {
                     let val = tok.nth(0).unwrap().parse::<usize>().unwrap();
                     outputs.insert(val, vec![]);
                     Drain::Output(val)
-                },
+                }
                 _ => panic!("how did we get here"),
             };
 
@@ -61,12 +61,61 @@ fn build_rules(inp: &str) -> (HashMap<usize, Robot>, HashMap<usize, Vec<u32>>) {
             );
         }
     }
-    // println!("{:#?}", result);
-    // println!("{:#?}", outputs);
-    return (result,outputs);
+    println!("{:#?}", result);
+    println!("{:#?}", outputs);
+    return (result, outputs);
+}
+enum Roundresult {
+    Played,
+    NoStart,
+}
+fn playRound(
+    automata: &mut HashMap<usize, Robot>,
+    outputs: &mut HashMap<usize, Vec<u32>>,
+) -> Result<Roundresult,usize> {
+    let mut played: bool = false;
+    let mut current_bot_key: Vec<usize> = vec![];
+    let mut res = Ok(Roundresult::NoStart);
+
+    for (k, v) in automata.into_iter() {
+        if v.input.len() == 2 {
+            current_bot_key.push(*k);
+            res = Ok(Roundresult::Played);
+            break;
+        }
+    }
+
+    loop {
+        if current_bot_key.len() > 0 {
+            let bot = current_bot_key.remove(0);
+
+            let robot:&Robot = automata.get(&bot).unwrap().;
+            // this is iffy V
+            let mut temp_array = robot.input.to_owned().into_iter().take(2).collect::<Vec<u32>>(); 
+
+            temp_array.sort();
+            let min = temp_array[0];
+            let max = temp_array[1];
+
+            match robot.low_idx {
+                Drain::Bot(x) => automata.get_mut(&x).unwrap().input.push(min),
+                Drain::Output(x) => outputs.get_mut(&x).unwrap().push(min),
+            }
+
+            match robot.high_idx {
+                Drain::Bot(x) => automata.get_mut(&x).unwrap().input.push(max),
+                Drain::Output(x) => outputs.get_mut(&x).unwrap().push(max),
+            }
+
+        } else {
+            break;
+        }
+    }
+
+    res
 }
 
 fn Part1(input_file: &str) {
     let inp = fs::read_to_string(input_file).expect("Sohuld be able to read file");
-    let (automata,outputs) = build_rules(&inp);
+    let (automata, outputs) = build_rules(&inp);
 }
