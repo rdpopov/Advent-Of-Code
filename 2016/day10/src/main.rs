@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, process::Output, ptr::hash};
+use std::{collections::HashMap, fs};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Drain {
@@ -151,7 +151,10 @@ fn Part1(input_file: &str, target: (u32, u32)) -> Result<usize, usize> {
             ),
             _ => (),
         }
-        playRound(&mut automata, &mut outputs, target)?;
+        match playRound(&mut automata, &mut outputs, target) {
+            Ok(_) => (),
+            Err(x) => return Ok(x)
+        };
     }
 
     return Ok(0);
@@ -171,14 +174,15 @@ fn Part2(input_file: &str, target: (u32, u32)) -> Result<usize, usize> {
             ),
             _ => (),
         }
+        // effectively we never trigger the targets condition
         playRound(&mut automata, &mut outputs, target)?;
     }
-    println!("{:#?}",&outputs.get(&0).unwrap()[0] * &outputs.get(&1).unwrap()[0] * &outputs.get(&2).unwrap()[0] );
+    let result = &outputs.get(&0).unwrap()[0] * &outputs.get(&1).unwrap()[0] * &outputs.get(&2).unwrap()[0];
 
-    return Ok(0);
+    return Ok(result as usize);
 }
 fn main() {
     const INPUT_FILE: &str = "input";
-    println!("{:?}",Part1(INPUT_FILE, (17, 61)));
-    println!("{:?}",Part2(INPUT_FILE, (0, 0)));
+    println!("{:?}",Part1(INPUT_FILE, (17, 61)).unwrap());
+    println!("{:?}",Part2(INPUT_FILE, (0, 0)).unwrap());
 }
