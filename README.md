@@ -6,6 +6,6 @@
 | 2017             | 5/50            | c++:3                  |
 | 2018             | 0/50            | lua or go              |
 | 2019             | 0/50            | zig                    |
-| 2020             | 0/50            | ocaml or scheme?       |
+| 2020             | 0/50            | ocaml or scheme or haskell |
 | 2021             | 28/50           | nim:14                 |
 | 2022             | 21/50           | python:10 nim:4        |
