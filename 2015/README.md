@@ -1,4 +1,4 @@
-# DAYS
+#DAYS
   Mostly what I feel like for the language but mostly python
 
  | days | + 1      | + 2      | + 3      | + 4      | + 5      |
