@@ -1,4 +1,5 @@
 /* #include <stdio.h> */
+#include <cstdint>
 #include <iostream>
 #include <stdint.h>
 #include <assert.h>
@@ -6,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 #include <cmath>
 
 
@@ -13,7 +15,6 @@
 #ifndef TEST
 #define INPUT 265149
 #endif
-
 
 int32_t part1(int32_t pos) {
     auto ring  = (int32_t)(std::sqrt(pos-1) + 1) >> 1;
@@ -32,6 +33,16 @@ int32_t part1(int32_t pos) {
 
     /* std::cout << ring  << std::endl; */
     return ring + offset_of_ring;
+}
+
+std::pair<int32_t,int32_t> get_coords_of_pos(int32_t pos) {
+    auto ring  = (int32_t)(std::sqrt(pos-1) + 1) >> 1;
+    int32_t ring_sq = (2*ring-1) *(2*ring-1);
+    return std::pair(ring,ring);
+}
+
+int32_t part2(int32_t pos) {
+    return 0;
 }
 
 int main (int argc, char *argv[]) {
@@ -57,7 +68,10 @@ int main (int argc, char *argv[]) {
             std::cout << e.what() << std::endl;
         }
     }
+
 #endif
-    std::cout << part1(INPUT);
+    /* std::cout << part1(INPUT); */
+    /* std::cout << part1(INPUT); */
+    std::cout << get_coords_of_pos(INPUT).first << get_coords_of_pos(INPUT).second ;
     return 0;
 }

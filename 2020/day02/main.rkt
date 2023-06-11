@@ -1,4 +1,5 @@
 #lang racket
+
 (require racket/local)
 
 (define inp-file "./input")
@@ -8,14 +9,19 @@
   (remove "" (string-split l #rx":|-| " ))
   )
 
+(define (filter-string chr str)
+    (list->string (remove-all chr (string->list str)))
+  )
 
 
 (define (verify-password ln)
   (define pas (parse-line ln))
-  #| (define counted (- (apply string-length (cdddr pas)) |#
-  #|                      (string-length (remove (caddr pas) (cdddr pas))) |#
-  #|                      )) |#
-  (print (apply remove (cadr) (cdddr pas)))
+  (define counted (- (string-length (cadddr pas))
+                       (string-length (remove (caddr pas) (cadddr pas)))
+                       ))
+  #| (print (caddr pas)) |#
+  #| (print (cadddr pas)) |#
+  (print counted)
   #| (println (apply string-length (cdddr pas))) |#
   #| (println (apply string-length (remove (caddr pas) (cadddr pas)))) |#
   (cond
@@ -24,8 +30,9 @@
     )
   )
 
-(define (part1 inp) (foldr + 0 (map verify-password inp)))
-#| (print (part1 (task-input inp-file))) |#
-(print (verify-password "2-9 c: ccccccccc" ))
-(print (verify-password "1-3 a: abcde" ))
+#| (define (part1 inp) (foldr + 0 (map verify-password inp))) |#
+#| #1| (print (part1 (task-input inp-file))) |1# |#
+#| (print (verify-password "2-9 c: ccccccccc" )) |#
+#| (print (verify-password "1-3 a: abcde" )) |#
+(print (filter-string #\a "abcdad"))
 
