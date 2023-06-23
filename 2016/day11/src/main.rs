@@ -1,195 +1,236 @@
-use std::{vec, collections::HashSet, cmp::min};
+use core::fmt;
+use std::{cmp::min, collections::{HashSet, HashMap}, path::Display, vec, mem::swap};
 
-fn Chip(chem: char, tbl: &Vec<char>) -> u32 {
-    return 1 << tbl.iter().position(|&x| x == chem).unwrap();
+#[derive(Debug, PartialEq, Default, Clone)]
+struct State {
+    chps: Vec<i32>,
+    gens: Vec<i32>,
+    tbl: Box<Vec<char>>,
+    elevator: u32,
+    iterations: u32,
 }
 
-
-fn Power(chem: char, tbl: &Vec<char>) -> u32 {
-    return Chip(chem, tbl) << 16;
-}
-fn PrintState(s:([u32;4],usize,u32), tbl: &Vec<char>) {
-    PrintStateImpl(s.0,s.1,tbl);
-}
-fn PrintStateImpl(floors:[u32;4],elevator:usize, tbl: &Vec<char>) {
-        println!("------------------");
-    for i in (0..4).rev() {
-        let (u,l) = upper_and_lower(floors[i]);
-        print!("floor {i}: ");
-        for chem in 0..tbl.len() {
-            if (u & (1 << chem)) > 0 {
-                print!("{}G ",tbl[chem])
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut res: String = "".to_string();
+        for i in (0..4).rev() {
+            for j in 0..self.tbl.len() {
+                if self.chps[j] == i {
+                    res = format!("{res} {}M ", self.tbl[j]);
+                } else {
+                    res = format!("{res} .  ");
+                }
             }
-            if (l & (1 << chem)) > 0 {
-                print!("{}M ",tbl[chem])
+            for j in 0..self.tbl.len() {
+                if self.gens[j] == i {
+                    res = format!("{res} {}G ", self.tbl[j]);
+                } else {
+                    res = format!("{res} .  ");
+                }
             }
+            res = format!("{res}\n");
         }
-        if elevator == i {
-            print!("E");
-        }
-        print!("\n");
+        write!(f, "{res}")
     }
 }
-
-fn upper_and_lower(layer:u32) -> (u32,u32) {
-    ((layer & 0xFFFF0000) >> 16, layer & 0xFFFF)
+fn between (i: i32 , l:i32, u:i32) -> bool {
+    l <= i && i <= u
 }
-fn is_win_state(st:[u32;4],tbl: &Vec<char>) -> bool {
-    let (u,l) = upper_and_lower(st[3]);
-    let full_mask = 1 << (tbl.len() + 1) - 1;
-    if u == l && u == full_mask {
+
+fn input_ex() -> State {
+    State {
+        chps: vec![0, 2],
+        gens: vec![0, 2],
+        tbl: Box::new(vec!['H', 'L']),
+        elevator: 0,
+        iterations: 0,
+    }
+}
+fn is_legal_state(s: &State) -> bool {
+    for i in 0..4 {
+        let gens: HashSet<_> = s.gens.iter().filter(|x| **x == i).enumerate().collect();
+        let chip: HashSet<_> = s.chps.iter().filter(|x| **x == i).enumerate().collect();
+        let diff = gens.difference(&chip).count();
+        let diff1 = chip.difference(&gens).count();
+        if diff > 0 && diff1 > 0 {
+            return false;
+        }
+    }
+    true
+}
+
+fn is_win(s: &State) -> bool {
+    if s.chps.iter().min() == Some(&3) && s.gens.iter().min() == Some(&3) {
         return true;
     }
     false
 }
-
-fn input(tbl: &Vec<char>) -> [u32; 4] {
-    return [
-        Power('S', tbl) | Chip('S', tbl) | Power('P', tbl) | Chip('P', tbl),
-        Power('T', tbl) | Power('R', tbl) | Chip('R', tbl) | Power('C', tbl) | Chip('C', tbl),
-        Chip('T', tbl),
-        0,
-    ];
-}
-
-fn is_legal_state(s: &[u32]) -> bool {
-    let mut res = true;
-    for i in s.iter() {
-        let (u,l) = upper_and_lower(*i);
-        let xr = u ^ l;
-        if (u & l) > 0 {
-            return true;
-        }
+fn heuristic(s: &State) -> i32 {
+    let mut res: i32 = 0;
+    for c in s.chps.iter() {
+        res += 3 - c;
     }
-    false
-}
-fn generate_state_for_floor(st:[u32;4],crnt_floor:usize,next_floor:usize,steps:u32) -> Vec<([u32;4],usize,u32)> {
+    for g in s.gens.iter() {
+        res += 3 - g;
+    }
+    res }
+fn generate_next_floor(s: &State, dir: i32) -> Vec<State> {
     let mut res = vec![];
-    let (u,l) = upper_and_lower(st[crnt_floor]);
-    let mut idx:u32 = 1;
-    // move one generator
-    while idx < u {
-        if u & idx > 0 {
-            let mut tmp_state = st.to_owned();
-            tmp_state[next_floor] |= (idx << 16);
-            tmp_state[crnt_floor] ^= (idx << 16);
-            if is_legal_state(&tmp_state) {
-                res.push((tmp_state,next_floor,steps +1));
-            }
-        }
-        idx <<= 1;
-    }
-    idx = 1;
-    // move one chip
-    while idx < l {
-        if l & idx > 0 {
-            let mut tmp_state = st.to_owned();
-            tmp_state[next_floor] |= (idx);
-            tmp_state[crnt_floor] ^= (idx);
-            if is_legal_state(&tmp_state) {
-                res.push((tmp_state,next_floor,steps +1));
-            }
-        }
-        idx <<= 1;
-    }
+    let gen_moves:Vec<_> = s
+        .gens
+        .clone()
+        .into_iter()
+        .enumerate()
+        .filter(|&x| x.1 == s.elevator as i32)
+        .map(|x| (x.0, x.1 + dir)).collect();
+    let chp_moves:Vec<_> = s
+        .chps
+        .clone()
+        .into_iter()
+        .enumerate()
+        .filter(|&x| x.1 == s.elevator as i32)
+        .map(|x| (x.0, x.1 + dir)).collect();
 
-    // move two chips
-    let mut idx_0:u32 = 1;
-    let mut idx_1:u32 = 1;
-    while idx_0 < u {
-        idx_1 = 1;
-        while idx_1 < u {
-            if u & idx_0 > 0 && u & idx_1 > 0  && idx_1 > idx_0{
-                let mut tmp_state = st.to_owned();
-                tmp_state[next_floor] |= (idx_0 | idx_1) << 16;
-                tmp_state[crnt_floor] ^= (idx_0 | idx_1) << 16;
-                if is_legal_state(&tmp_state) {
-                    res.push((tmp_state,next_floor,steps +1));
+    // println!("gen_moves {:?} ",gen_moves);
+    // println!("chp_moves {:?} ",chp_moves);
+
+    let new_floor = (s.elevator as i32 + dir) as u32;
+    // move one or 2 chips
+    for i in 0..chp_moves.len() {
+        for j in i..chp_moves.len() {
+            if j == i {
+                let mut c_new = s.chps.clone();
+                if between(chp_moves[j].1,0,3) {
+                    c_new[chp_moves[j].0  as usize] += dir;
+                    let s = State { chps: c_new, gens: s.gens.clone(), tbl: s.tbl.clone() , elevator: new_floor, iterations: s.iterations+1 };
+                    if is_legal_state(&s) {
+                        res.push(s);
+                    }
+                }
+            } else {
+                let mut c_new = s.chps.clone();
+                if between(chp_moves[j].1 ,0,3)
+                && between(chp_moves[i].1 ,0,3)
+                {
+                    c_new[chp_moves[j].0 as usize] += dir;
+                    c_new[chp_moves[i].0 as usize] += dir;
+                    let s = State { chps: c_new, gens: s.gens.clone(), tbl: s.tbl.clone() , elevator: new_floor, iterations: s.iterations+1 };
+                    if is_legal_state(&s) {
+                        res.push(s);
+                    }
                 }
             }
-            idx_1 <<= 1;
         }
-        idx_0 <<= 1;
     }
 
-    // move two chips
-    let mut idx_0:u32 = 1;
-    let mut idx_1:u32 = 1;
-    while idx_0 < l {
-        idx_1 = 1;
-        while idx_1 < l {
-            if l & idx_0 > 0 && l & idx_1 > 0  && idx_1 > idx_0{
-                let mut tmp_state = st.to_owned();
-                tmp_state[next_floor] |= (idx_0 | idx_1);
-                tmp_state[crnt_floor] ^= (idx_0 | idx_1);
-                if is_legal_state(&tmp_state) {
-                    res.push((tmp_state,next_floor,steps +1));
+    for i in 0..gen_moves.len() {
+        for j in i..gen_moves.len() {
+            if j == i {
+                let mut g_new = s.gens.clone();
+                if between(gen_moves[j].1 as i32 ,0,3) {
+                    g_new[gen_moves[j].0  as usize] += dir;
+                    let s = State { chps: s.chps.clone(), gens: g_new , tbl: s.tbl.clone() , elevator: new_floor, iterations: s.iterations+1 };
+                    if is_legal_state(&s) {
+                        res.push(s);
+                    }
+                }
+            } else {
+                let mut g_new = s.gens.clone();
+                if between(gen_moves[j].1 as i32 ,0,3)
+                && between(gen_moves[i].1 as i32 ,0,3)
+                {
+                    g_new[gen_moves[j].0 as usize] += dir;
+                    g_new[gen_moves[i].0 as usize] += dir;
+                    let s = State { chps: s.chps.clone(), gens: g_new , tbl: s.tbl.clone() , elevator: new_floor, iterations: s.iterations+1 };
+                    if is_legal_state(&s) {
+                        res.push(s);
+                    }
                 }
             }
-            idx_1 <<= 1;
         }
-        idx_0 <<= 1;
     }
-    res.sort();
+
+    for i in 0..gen_moves.len() {
+        for j in i..chp_moves.len() {
+            if gen_moves[i] == chp_moves[j] {
+                let mut g_new = s.gens.clone();
+                let mut c_new = s.chps.clone();
+                if between(gen_moves[i].1 as i32 ,0,3)
+                && between(chp_moves[j].1 as i32 ,0,3)
+                {
+                    g_new[gen_moves[i].0 as usize] += dir;
+                    c_new[chp_moves[j].0 as usize] += dir;
+                    let s = State { chps: c_new, gens: g_new , tbl: s.tbl.clone() , elevator: new_floor, iterations: s.iterations+1 };
+                    if is_legal_state(&s) {
+                        res.push(s);
+                    }
+                }
+            }
+        }
+    }
+
     res
 }
-fn generate_states(st:([u32;4],usize,u32)) -> Vec<([u32;4],usize,u32)> {
-    let floor = st.1;
+
+fn generate_moves(s: &State) -> Vec<State> {
     let mut res = vec![];
-   if floor > 0 {
-        res.append(&mut generate_state_for_floor(st.0,floor , floor-1, st.2));
+    if s.elevator < 3 {
+        res.append(&mut generate_next_floor(&s, 1));
     }
-    if floor < 3 {
-        res.append(&mut generate_state_for_floor(st.0,floor , floor+1, st.2));
+    if s.elevator > 0 {
+        res.append(&mut generate_next_floor(&s, -1));
     }
     res
 }
 
-fn input_ex(tbl: &Vec<char>) -> [u32; 4] {
-    return [
-        Chip('H',tbl) | Chip('L',tbl),
-        Power('H',tbl),
-        Power('L',tbl),
-        0,
-    ];
+fn generate_next_n_moves(s: &State, n:i32) -> Vec<State> {
+    let mut res = vec![];
+    let mut alt = vec![s.clone()];
+    // let pruned: HashMap<(Vec<i32>,Vec<i32>),Vec<State>> = HashMap::new();
+    let mut done : HashSet<(Vec<i32>,Vec<i32>)> = HashSet::new();
+    let mut solutions:Vec<State> =vec![];
+    let mut minh = (heuristic(&s),s.clone());
+    for i in 0..n { 
+            for i in alt.iter() {
+                for j in generate_moves(&i) {
+                    if is_win(&j) {
+                        solutions.push(j.clone());
+                    }
+                    // if done.insert((j.chps.clone(),j.gens.clone())) {
+                    let h_res = heuristic(&j);
+                    if h_res < minh.0 {
+                        // minh = (h_res,j.clone());
+                        res.push(j)
+                    }
+                    // }
+                }
+            }
+            swap(&mut res, &mut alt);
+            res.clear();
+    }
+    if !solutions.is_empty() {
+        return solutions;
+    }
+    return alt;
+
 }
 
 fn Part1() -> u32 {
-    // let mut inp = input(&vec!['S','P','T','R','C']);
-    let tbl = &vec!['H','L'];
-    let mut inp = input_ex(&tbl);
-    let mut states:Vec<Vec<([u32;4],usize,u32)>> = vec![vec![(inp,0,0)]];
-    let mut visited:HashSet<[u32;4]>=HashSet::new();
-    // PrintState(states[0][0],tbl);
-    let mut idx = 0;
-    let mut min_step = u32::MAX;
-    let mut backtrack = false;
+    let init = input_ex();
+    // println!("{}", is_legal_state(&init));
+    let mut current_cand : Vec<State>;
 
-    while states.len() > 0 {
-        let last = states.len();
-        if last == 0 {break;}
-        if let Some(crnt_state) = states[last-1].pop() {
-            visited.insert(crnt_state.0);
-            PrintState(crnt_state, tbl);
-            if is_win_state(crnt_state.0, tbl) {
-                min_step = min(min_step,crnt_state.2);
-            }
-            let new_states:Vec<_> = generate_states(crnt_state).into_iter().filter(|x| !visited.contains(&x.0)).collect();
-            for i in new_states.iter(){
-                PrintState(*i, tbl);
-            }
-            println!("depth {last} new states: {}",new_states.len());
-            states.push(new_states);
-        } else {
-            states.pop();
-        };
-        // break
-    }
-    min_step
+    println!("{:?} - initial", &init);
+    // for i in generate_next_n_moves(&init,10) {
+    //     // println! ("{:?} - {}", &i, heuristic(&i));
+    // }
+
+    print!("{:?}",generate_next_n_moves(&init,11)[0]);
+    // generate_moves(&init);
+    0
 }
 
 fn main() {
     // println!("Part 1 {}", Part1());
     println!("Part 1 {}", Part1());
-
 }
