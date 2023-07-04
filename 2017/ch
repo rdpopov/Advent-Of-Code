@@ -1,0 +1,2168 @@
+commit 85556b62feaeaa3fc3d547747f9f20d0c4eff362
+Author: Rosen Popov <rpopov@mm-sol.com>
+Date:   Tue Jul 4 18:50:03 2023 +0300
+
+    Finihed day 3,4,5 and some of 6 of 2017 in c++
+
+diff --git a/2017/day03/main b/2017/day03/main
+index d7d576f..3c8b532 100755
+Binary files a/2017/day03/main and b/2017/day03/main differ
+diff --git a/2017/day03/main.cpp b/2017/day03/main.cpp
+index f57e97b..91f968f 100644
+--- a/2017/day03/main.cpp
++++ b/2017/day03/main.cpp
+@@ -16,6 +16,64 @@
+ #define INPUT 265149
+ #endif
+ 
++typedef std::vector<std::vector<int32_t>> Matr;
++const std::vector<std::pair<int32_t,int32_t>> dirs = {{1,0},{0,1},{-1,0},{0,-1}};;
++
++class SquareIter {
++	public:
++		int32_t x;
++		int32_t y;
++		int32_t ring;
++		size_t dir;
++
++		SquareIter(): x(0), y(0), ring(0), dir(0) {
++		}
++
++		std::pair<int32_t,int32_t> next(){
++			std::pair<int32_t,int32_t> crnt = {x,y};
++			if (std::abs(dirs[dir].first * x + dirs[dir].second * y) > ring) {
++				dir += 1;
++				if (dir % 4 == 0) {
++					ring += 1;
++					dir = 0;
++				}
++			}
++			x+=dirs[dir].first;
++			y+=dirs[dir].second;
++			/* std::cout << this->str(); */
++			return {x,y};
++		}
++
++		std::string str() {
++			std::stringstream out;
++			out << "SquareIter {";
++			out << " x: " << this->x;
++			out << " y: " << this->y;
++			out << " dir: " << this->dir;
++			out << " ring: " << this->ring;
++			out << " } ";
++			return out.str();
++		}
++};
++
++int32_t sum_moore_neigh(
++		std::map<std::pair<int32_t,int32_t>,int32_t> matr,
++		std::pair<int32_t,int32_t> cell) {
++	int32_t res = 0;
++	for(int32_t x=-1;x<2;x++) {
++		for(int32_t y=-1;y<2;y++) {
++			if (x || y) {
++				auto cell_value = matr.find({cell.first + x,cell.second +y});
++				if (cell_value != matr.end()) {
++					res += cell_value->second;
++				}
++			}
++		}
++	}
++	return res;
++}
++
++
+ int32_t part1(int32_t pos) {
+     auto ring  = (int32_t)(std::sqrt(pos-1) + 1) >> 1;
+     int32_t ring_sq = (2*ring-1) *(2*ring-1);
+@@ -27,7 +85,7 @@ int32_t part1(int32_t pos) {
+         std::abs( pos - ( ring_sq + 7 * ring) ),
+     };
+     for(auto& s: cross) {
+-        std::cout << s << " ";
++        /* std::cout << s << " "; */
+         offset_of_ring = std::min(offset_of_ring,s);
+     }
+ 
+@@ -38,11 +96,22 @@ int32_t part1(int32_t pos) {
+ std::pair<int32_t,int32_t> get_coords_of_pos(int32_t pos) {
+     auto ring  = (int32_t)(std::sqrt(pos-1) + 1) >> 1;
+     int32_t ring_sq = (2*ring-1) *(2*ring-1);
+-    return std::pair(ring,ring);
++    return std::pair<int32_t,int32_t>(ring,ring);
+ }
+ 
+ int32_t part2(int32_t pos) {
+-    return 0;
++	SquareIter cell;
++	std::map<std::pair<int32_t,int32_t>,int32_t> matr;
++	matr.insert({{0,0},1});
++	int32_t last_sum = 1;
++
++	while (last_sum <= pos){
++		auto crnt = cell.next();
++		last_sum = sum_moore_neigh(matr,crnt);
++        /* printf("%d %d -> %d\n",crnt.first, crnt.second,last_sum); */
++        matr.insert({crnt,last_sum});
++	}
++    return last_sum;
+ }
+ 
+ int main (int argc, char *argv[]) {
+@@ -69,9 +138,32 @@ int main (int argc, char *argv[]) {
+         }
+     }
+ 
++    auto test_part2_lambda = [](int32_t pos,int32_t expected){
++        int32_t fn_res = part2(pos);
++        std::stringstream msg;
++        msg << "part2( "<<pos << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    std::vector<std::pair<int32_t,int32_t>> tests2 = {
++        { 0  ,1  },
++        { 10 ,11 },
++        { 24 ,25 },
++        { 3  ,4  },
++        }; 
++    for( auto &t: tests2 ) {
++        try {
++            passed_tests += test_part2_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++    std::cout << "passed tests: "<< passed_tests << "/" << tests.size() + tests2.size();
++
++#else
++    std::cout << "Part1 "<<part1(INPUT) << std::endl;
++    std::cout << "Part2 "<<part2(INPUT) << std::endl;
+ #endif
+-    /* std::cout << part1(INPUT); */
+-    /* std::cout << part1(INPUT); */
+-    std::cout << get_coords_of_pos(INPUT).first << get_coords_of_pos(INPUT).second ;
++
+     return 0;
+ }
+diff --git a/2017/day04/.swp b/2017/day04/.swp
+new file mode 100644
+index 0000000..620ab83
+Binary files /dev/null and b/2017/day04/.swp differ
+diff --git a/2017/day04/Makefile b/2017/day04/Makefile
+new file mode 100644
+index 0000000..aee669a
+--- /dev/null
++++ b/2017/day04/Makefile
+@@ -0,0 +1,5 @@
++all:
++	g++ main.cpp -o main -Werror -lm && ./main
++
++test:
++	g++ main.cpp -o main -DTEST -Werror -lm && ./main
+diff --git a/2017/day04/input b/2017/day04/input
+new file mode 100644
+index 0000000..61150ac
+--- /dev/null
++++ b/2017/day04/input
+@@ -0,0 +1,512 @@
++sayndz zfxlkl attjtww cti sokkmty brx fhh suelqbp
++xmuf znkhaes pggrlp zia znkhaes znkhaes
++nti rxr bogebb zdwrin
++sryookh unrudn zrkz jxhrdo gctlyz
++bssqn wbmdc rigc zketu ketichh enkixg bmdwc stnsdf jnz mqovwg ixgken
++flawt cpott xth ucwgg xce jcubx wvl qsysa nlg
++qovcqn zxcz vojsno nqoqvc hnf gqewlkd uevax vuna fxjkbll vfge
++qrzf phwuf ligf xgen vkig elptd njdm gvqiu epfzsvk urbltg dqg
++sfpku viwihi fje umdkwvi ejzhzj qrbl sfpku sad nawnow ksnku
++nzhj mfudick ueaa jnhz kpy pzk
++euiin xvl elaoelu wbdd xlv jtm nohtq gfdbgdg gdfggdb edtym
++xfmkn wyww woe hwysuh gjw dtk utryasc dela eluk vmmun
++nmag qfwe cwslmgd nlhf hpf
++ifs sszo iod isf jna
++pjptwg wreera leyb hmlbpf qcrbma ylgue
++rwlpo jhla rprxvgs quguh pyybwgl qqvcb
++rxtcpdy wmpci mpcwi vwvdzdn nfpnj rcsxinl itatg ycy hrctg ron wveju
++zmkfn wip pyiz pyiz tnyg dvftf elks ezhotbj wip
++sgmtfdd xdl sch sch yaxzh wphgksh knzrixp yaxzh etm czqbaa jldta
++gnbr rnpd upe eeb sbq sbq oxc rwvugoj
++cshk thcc emfxx emfxx pbtcf jpim vltkqar czy iudkac jhpcc nqs
++uzbvx fkiuyk izxdiu yutntvn dixuzi hkyfnud oyz ynutntv
++ewl mfns idy fphu yqccb pte unukirt unukirt fdx
++lzn tin fgena qbql qycbdw gbtn lctlysx adhjfq blu aiv
++ites ites pbxzunl vljzh lqgerta pbxzunl
++vmk wjfzvhn pqkidze qfwh
++tqprmc exypl caf kwikh mdyyljc pbo hhxxo skna
++sqxgejb ejc fvup hpesvs luz fcxqwhr ypxof fxlcp pxyk xiczjri
++vjg qcw fsyqaoj mxf jha feclqqr vzdqnk verw mvmvm pvdqtcd xsfu
++fwwn ktvdh aecfv acfve yjozxwo cnujw bcgde lphnk knlph bqwlqju
++uwwapm dlln uwwapm uwwapm
++huupab ewetcte huupab ewetcte
++wjs zipivpd klwafr ipcczg wbv uujstsw hykn
++mgojdyh hlm xruta lbmaxit pabqrnp vkyigd ptpzr glin gfau pbo
++tbwx baqxq vtz jwex tvz tzv
++efopwx wfknzb ogaxln tqzrh jne zugd zpxikma
++rdjsa arjds hqdldw fjrtl midt qjv jfrlt
++dggqohj bidaaty iah lgmug wwmlbc lggmu laonaoq erkqrb tqolnns iygv qnonlst
++msc glwn xjfnij itt pka irrafjd euazydj silo
++zsyut znsht ldky zsyut dzcdft znsht
++iit cyteu pib fgvrs iux ffctql pib zuzp zsbb ieoi
++xxtwlu kqfxjhq isj xqjhfkq dohrs haovzc cgfwfrt munqon vuyexz nouqnm
++eptpqgi uiflvd acj livzq ejtt bniud cjdh jkrcken lspfy tpxri zibj
++zxme dpo fumup gly bkdcwxn lsly eglhe
++uoshw ijoyiql rcskaa vjbqv roiinzi fppqdu
++xuw vdbxie oypcx khxq xebjt oypcx uitqep vdbxie hoz
++lrjv tdksk uebo wktebvx nlapmp udhhxh uliqbm cklyyf jlzw xrmdlvx
++fosspck fosspck fosspck qyidyur hxnxmb dkpj
++rmrvlms susvos idw hzy idw tjgxbc lhgqxr tjgxbc uuq
++etjmbdr hwqe lnfwzni lnfwzni good eisci etjmbdr
++yqde bmlcc yuel vpyplss vyvhho kslgiu lllhc jtkijdj uclz hfbqsf
++tlohlvv tlohlvv bdqahw tlohlvv qavcqrn penia saafy
++lvtzyt qffe eaikhv eaikhv wbnl mdkg mdkg utfrm
++luowwk magp luowwk oyao oyao hsb yms
++gnxply vsdqum nprf jik axdp ariqjpc hjqcc
++izbo nkqkb xpqg pgxq qpxg gpm jxbkvu resj
++hsgyxar hvsl ner zzmcn lcpdvqn ern
++rfjlhu xkyh hafs cvvk drg vjsk mymc iab ycmlubx kpwemiw
++wlci qhhpr vhpr oyrili cnynh sivdso ldjya wilc ioiyrl
++cdfwd mbtk sienxui jsmxzo yxbeyl bybtc covxaq yuxn ktbvztl ktbvztl rcekjhk
++ptenhqv tzdt phetqvn mfkdz
++hmezeak pqvqld amsih jxqacc uferfyh nfqjsz rtuqdzz pohcx qia cpxho hgpqs
++iygny dluc uxqz nlujm xkdtlm xbdgepg jwn ohl wpfll
++lnqf pcxy cpit enp zpj lqfn oowgw yoxdff ohvcfcf fuvz qkpmb
++oydu jlscilm pzxen nmtdngu tslcupx ntdgmun uztpx nlhh jqn llsv
++euyx epn gyvg cwtoe ruyap yaurp uryap obbl ovo
++pgo irm ksrxe qotuygd afwh qfhzfsr wafh dqjbwce dzfo hew skrxe
++dpvel dpvel ipljjxs vrrsob iakey uheuu swxu qmnmn mpjkb jqrwfmv jozj
++sempz plzxqe qvyg sempz fejux
++cqgqvg zhqir rqzih vyu fmb mfb
++uejl kjh ayz dzimg yzafvg dem vlogg
++htfkd htfkd hwykmm htfkd
++oxvgq wtai rkyyxya ldkecdv
++lvlrsu rsullv pptnrwi slvulr vxrk dpzti
++gde ixwoz nnsx nhc nzi
++dsadkj qtgya wco psyondq jayad crc lswwm purrad pof
++nocibgs hxqdejv nlqxdpu dvzd
++jfaws aiwnjm tqjpgs fuiobz gwnemv hjevs xkbbgiq sakgv zmwpkuq grjllw
++xrr jwhtchs boaqkg wjhdr xrr
++vyapct tgw juzgwkz odddvof juzgwkz
++unuu kubdd dxr drwg
++qpefzz iemo fwa vhdcxx
++hseqy copss gytzub lxi mrxtwc hxqqdfx ijt kcy tafjs jit
++uevse rrq zmwyjfe xljx lhgnyzt rngvwqd
++gfvpyhq xpdhind eocgpiz ebs pcmsgjy swni iwns thspnh yvbzxz fgb
++hxr ehw ekfd ncxcs gxjmd oqszdjp fgu gwuoafw zumenf qltbw whzuxov
++wfc pawqo pim jxgt dtiwzil hdptivc slkazm htafjih hzheez rkk amy
++mgoatiy pkec ddvwyni zuya aqrcjes ubkaeus nuhhad upe qfem bpcc
++rmyeg qfq bia lzk fusqfb ltvgry vggr xaxi avwdkbg zhlzt
++zkjoeee dyi sxdwfqa irqljmw gek dgdb mrakr ddaznn zlh ajzzacf juv
++kmqcy pohbej hujdgao rsxfkn vlu
++scnpa hvl cybql lvh lbcyq msw deqqb yjpsndq
++ndhjooo dpf ziey jtjlc eesag ldhgoif
++tysbae wkpst kjz stpkw sil yetsba
++ghvlfq flhvgq tgkjie gqlvfh
++oimn vlmsljl ocala vokhrs odyv msn dzly wcky
++cfjwmh rpsdor bttnkg jxenm mwdk mer jgsusdz cslf
++ialvxk bvc qjfikr caw puhmmfl xpmsx
++tyoey egcf dijg vywd enued uxkshz nav bdrn hjugffi iobqwiy
++eykhxck shpfjhk vlqg alkenz kuj okxs oeth mqbr nfvqvkv xfvyi mboo
++zbw curcajm mel jxqcw mpdscxq rhadty zrddeh wmedc wkcwt yvwm
++iee hzeofmh pqlkkb azlam fpj hzeofmh ripi
++sawaqek oyoiwtb npq pisadk nnd bzgo wiqme lxnvn
++obqx ffiegn obxq for xobq
++zwway wwazy aqxg gaxq
++ebssilw nuscati mofyc sogyacc yujmdwu ehxsx qcaf udvoo nlcfaz eov
++vnbe wtzzjn bczyxt crmvas zujy kukq zujy kukq
++gvltk kgltv kglvt zflikic
++hby pium gut fjqn sksoqyq kcliapa
++tbonrr prf vga jqgw ulze ukfig
++zafixw hia omgwoi noeiox fqbket iviidgp bebune kwcuotp slvy wcx
++fjq cyecn fhxvj byv kojvj iaqd aaxva rkogp
++vqbbt sjmr mxu mxu rlfj yqhtzv cuar yde yrs sjmr
++iyxiyp auepgw dtpbyvu thuoai fpsfkpn bemgbsk lni ozy jogp xldyvvx fpsfkpn
++jtha ibn ahbkh xzxkei tql mycvmyh ioyw
++mpsc pvdiuu wqixxlo cqwmlrw cttoz lad
++srl xxlnofu dqf snxd zjlp htxzd
++fkv berlbyh kyna wkme qjzgh thpw frup
++irhreaj udkpbza qmgp ormlipa lbyuc
++empizc apcb ossmtj awk ttsgi bfoymzd ftx jkicph qqjv tywp fwzfe
++zaqkd ysn zaluvs rljdk ast fjp amjqr uabrya ufswzjg vcldkxt hzsmrbl
++qvy tqgnwj akibr tfjevhv vav
++mhe sxg hacoa emh kasf hid jklfy ijk dih
++qvwbenk akdctm jztmsx aqvpodu vmknns nck letcrk poba
++lhve kkvff iiixid vtsun uvgte mmlxk pgd
++gktphd aaoqwz lrvsuw ofcyvmi suvwrl dpqiol wjgj uqigjx
++tbp xoc lmz dyzlvp bjleh pxj xjp xbil
++gpzgvj tctszm tctszm pnp upqtmm rribg tctszm sllsbr
++hpm qvjnd lyqg bybpwn etz pwfigbg uqgrvpg cvniubo
++tpowus bdncyxg gmm ebfg zwoue izgkwtx gmtfeg xvudp xgmjp atrvn aqgl
++wlrxvo wvonohi owxlvr owhnvoi
++knyo aiixyi sjtqb kukhgv qkj qiuefb syhfc aoana okmot tdsmnoj eyzqjn
++szhto szhto szhto fxpsavu dtcz hnwqdvk iza
++poykme rboczge tuyiw sxr
++lpgbp bpmf aiqy exzqt gxdoow yjp fxwdmt eoklc jnps zbnbiwr ppvl
++huecy jjhyz pwcea ffofmj tts
++ahbmkw brz xdenmw mwexnd ncdxgf gcxnfd
++yhfnra vqljz bkyxzt vhtsyde ysaxt qbw
++gqhiej rofhmp soeebdp rcuiblb rcuiblb rrnh nses
++pxrwe suil iihzf lhcgmfm mqasxh ttpp kqitdyf cuabaa
++cxl cwsp qyseogj dimvv igsoxu ncrexla ubrvpp oum usluv
++rkmo jqqcdjb mobqcta pbcmoi afjlh mork
++nmohoeq fezpxh fezpxh yec
++yxlncrt ivi dajo tjpim tjpim
++hzhy rcjs uhyvwz tdpxlqw itoiyf
++ded apfmhe stfk ugyujv drwks zagqnw mbbzmvc aoupemq
++iezre wivdwif xzytxe xwytd vpnol pljx aot phln ztncw
++ozblu asda tkxh xqe pvijnl qwwh uvp bdhtgjt uynwtav cdz uqmvp
++eukgtsy kdfb bdfk tnv dfkb ewdemb
++rsf cxnk cid qsa zwk oetnggn
++fpq oim zetbmlk fpq oim xgv cbaj cjrqm
++phgldt fhmkc efkztj qidri vsv bvjf lfwfgm wfuoln toamg wfuoln idrs
++iuc rrdnk rrdnk asqhnz qxkigmo eeoim mmdtgif akk
++rfvsyy kopfhmd tnv ibo demeqm gxrxw hwk ukorln bep
++ialo eogif sxlj xfegx nanch egoif eymwt
++kttrpjq gbnyiat kptg oarewx vkmt gbnyiat szyokf
++tjll xviodi tjll efc rliugl wfbbpq wsqvdli jur tjll bguqyu
++uecm yzjhn vqf labnc xyaksj
++hjtef zzq ellr wtrodcg drwqo ernt uzx sqiokam
++izmh ddutl bdzft jvfthh
++ecr xqrp qlxstu kgprd gqvtwni mkughf bulabe bvoxkx
++jwsna vjwq swkycg cpp dvmyal xotxviy qkiva ffa eakwp fww yirri
++ufnl lpuxw rjki nggh ajdkpvo oeuaemy bjisma vsjzc
++ctxu aavlw rap fzxtcp msufn fzxtcp sdlaom vgvdvpc
++rftw cyf twyxi orifavd
++ogiht ertz wcw jnqdup phvp lbw
++tplpyq jeh aobamqe bvaim qptac gssi mkjbaj
++nmklyg iitx iczojzr vjspqb uooky uooky hjk
++ggnekbb bnebggk sepzjd fvqfgr
++wnfwrn yaiogv mbusuy cpbcgs thjea
++atndjc dbjgdz guedeay rasa kfhame pusuu dbjgdz
++xivzyml xivzyml eqsykxo bshvz xivzyml
++nfe ayx gscy ylyp oqyl isatnpx poaelm zsrw dpd eyrdjpq yllk
++feqktz mlm jhi yxigeu xzqa qwv yquxw emken jgqsp rojfcu
++ruvfcud poubal xswer hfhpyp guf pzgzoq pzgzoq jwgxafi guf kqzzlu apg
++rxwcsdc rxwcsdc ywu rxwcsdc
++dmgsey xrtx wldwyxz avi
++yxnqv ewlx fvif ozfcbxb zqapa yudqksk wlxe mjpvgz
++ozoa ozoa hwkbp ozoa
++qcv drtqn uqv kcsavgn ybzs tkw
++njmloq wapa srm srm ifurca
++ezm ccj rub yuaww xhee liikjee kcabgic sbgqx vrpyo pzmesdp ksvv
++hycyne raaksm nylsc lcpgn akasrm vxwoaum
++zhugs pqquitv bae lyozb fhij pcdcc bae rygsgm pqquitv pizz
++oxx bzk grpis qiqljwh svkn
++qcq qqc fzgn sqg
++lclad motw ukz zghp
++glr okzfs zgv ygsvv sauuog glr amxr vvmwmu khy eyh
++ukpxpy rgnqyaw ncm coeblf
++qdbr ortzo spvnrnq uomtj vffbeva
++miwar bidfxp eibo qyee
++yldec ghwj mxlemvi imac klkvmg fekxhp kevlzfr fcgnoq fncgqo
++hlm vlol qdic rltij nlzxfys rzpoh
++krpwspb yrosr hioqla dbpgzgu dvkvvc vvdckv lcjzb qbsbr acbi rtnk
++iqtvk jcldzuv smly whmnte mdwlse mkxw mfnkv mkxw kes owkfh
++iwcjmkt rnb bjcdjl furhzuu exs
++kjwu iuaj ixkujoa jzeau whpn
++tvj zrdy fwsbagh zrdy czuzum lxotprx wbohaai
++crsyzod jouf osxntw iwzzie bodu scze gjxn vgxvqo gjxn mmthykb
++dabjfb vjqz cvr gsymwoe qzpusj twvwhw gyvlqd kdrdkzm bdljp cvr
++vmswdz lgjsvxz yjkgqkg tzmjkfp uzbmwxe kuqa dzomt hep jjlibs oxvpvq cix
++iqgd btwdjd ncdrovj ltxqc orwhdlo orwhdlo
++nxro uxj ovgha elvzl xmlzssr wonimvb urecfx dbfn kope
++tbes cgyh fypswue fgxjqtd dxdrfm pzhnaeu kugspa
++eouzw qrpokyb fyhpb bcvfvze brdwey gpaa fpqutw pbqkroy axtc egamku gxk
++xdrovpt peeww wkcin suir gvrbix
++hgsjks juvod jtii iijt
++yaw hzifa wpagkd tgvmc iru yyeuy mgcvt fhiza
++lsk lks kls edypaxo
++tjz qjs mgoyd gomyd ztjbex nprwk vvw rtjsq quvf vuziqtb oygdm
++kftodz xua lyxt zfadf fgdwt zfadf xua ehwykd wniahd mqoarg
++qgiapb xptk iscyf zfspn qvrpva egufqte zfspn hksw xwxrs dkdruku vegfs
++wqifs wfsevg iwnjjpi oajju tkvhpl lemuw
++rzbmhso pbvb lfgpq fzjwxxh pqlgf rbhsomz
++ufi aiyd gxozgx hygjp dtma uughdc ojumcf yuadt
++caami tqzkvor tqzkvor tqzkvor
++vhtnvyx myxdywi mwpwq hjxadd qkcj vvytxnh dmbea
++jvjtcjg mbiwyad cup xkrfk puz uxpmutf rjxyxyn mfchc
++ocrak zprfbgu pjjzl zoehfkm xqn qki uxq tcv emknqjp wvmkas
++nxg myr myr vnfzpoy
++gwu ezt kbmeouj sxue cxax gcquz ieegnal xecusia vxf
++xermi xermi qporwc mzemns ticltnz ddpsstr ddpsstr slgbn
++xnujwtw bvzv xjwntuw unxwtjw
++tipo akp fkmcls wglmjq fnrtsv
++fan dfbya qrp lcvxqqu ldpm gucmeky mrzy fixaph rygneb ocm pjh
++ovtrqs ujmbnal geihpe mijhy eewuic toaxbp ipy tvb evlmrtd lbujmna
++lsmbwwd hvurk ihbuek hvoyq erzomhn gue lpq dihon dgzvst
++fuoshq hfrzeu zfrhue ufqohs
++icgwnbi gmhogxu gmguohx toixb hfwj haxlav hbe jdpxeyi xtgfi
++vfakk ioil hddqu sdztx hduqd bmiuyr vmas
++mcvjjhf sfgt sfgt lambvp dnqc pfecquk
++xgr omy bmoadg afbna mar nicpazd iveku zdioyo
++rpipon dwg wgd pironp
++fkyx wjefuy mfesst ztlf gnnceb rsbvuk ckilt kliqnm iuifcvu
++lmgzx oknwr wmttry luipa vcttj nuqdmy
++iota efrxkk daqzm certtoi nnvqrwz qrqgza tllwp efrxkk
++alde wqmdjy erh txrtqm zuljg hspbnrd pvsnebh bkue pvsnebh txrtqm txtthn
++hgggm rswwfpj uctzrv bylqeen dpbnw ostsjwn jtjiyuh ofxu mmmqlg ayhza opbgdrv
++qmhkh orbeokv agosach lhujcju jzpp wmxtcy jcxglu iuwmzrv xwkgz sxlzld
++dzcdm lwal xpujjm xpujjm lpfojz lqqcon qmqrg
++gmwugq ceslt rxcogaq jwkraq
++joxr brdy yixlou brdy lnr lnr
++wbut pxlsclt igigapq zeacg jxiezn hvws wwz ujpbl fdjtfjw opod kea
++tsodswf pufo zqrt zvcpu
++nyy mrqmg zkt tslzsf zkt
++hxywv lbmogd hhv npyzgjy whfvv mlfqjr ggjz owijo zmesslo gtvizw
++xzz dvpzxbd wxwlp cye rcqpgrr gynzo nhy gzpk fpfmb
++nhaakbv iazpdc yadqbe kmqm dffq lidnh cegjosw kgd hwivd wijj
++cwmdyf huoy awihev qav cwmdyf rdwck hahj pesfyk uoju zrirjdu
++qabl vwcwbb phnd xnp huuzwxl rukbp kod sfu ngcvgrt buncnfw
++regyd gjzfwf hpuv zmm vphu gwffjz
++rdf emo crsoeo bksetj aqfzm pphny
++opbmboi iakvj ymjwm vxoq qvox yafk zkch adlusz
++qhm jul zasv xhu qnhjwzx
++mjmyvd mezfuls upbdpzw awc qxta bzrx tjpjmj dxfyewc zorm
++bko kfokm htcpoqc liuvj xhmpcu ccqphot dthvo pfj dtxpmu xoocm cmxoo
++kxv eenns qhpfsvo gqoyv jzjho aoscl fetug agxmfea aygpt
++javmegf jlmt epdwy egfs hwv uszcqvn foixpz iukh dbuhqgs zgb
++zrex zrex xtx ydan maomp hqdhh mfvan broh wvwhqbu
++phatsot joipm pmniq arqzmbe vurl bgy iwbwk oyhngcv vnzbzgm bgy
++xprufgn vhca nrs abuh zwsxmhk mqrj tyslsij ojkdzom wepxg koodzv ypvyy
++vop nnpz mcod mlli ntyhz laqztb kauqkla gmrfte pcuhaci
++vrenj lypors prknc djbdkzv amofdx
++lgig lojnrw obusoc fkwe ggnv pydcraq bvdivl vev mrojjs rxa
++qeg tap jocwlsm vqxa lmjscow
++gptlrgq vdasm erdc oparmw
++rgbsa nacqhvm pczf anupcp upudwgp
++jbnobi ifhzrd ihrkkf osw wos lrnwv
++aiuntpl fcxpmz fplacs fplacs tipm gfotkx
++fsbnd qoc ozmbi rqv fmbxh tuso kfoxvjn ocja zzs jwplx
++muaklvq ghozoxh nwxbh mgoou ufptl ouhh reyuf jougckd dgprag
++gwbnqwv dtrd mkzxinl erxl zmfa skuu crxmp wwao wwvdpk nxbn lglzy
++qeejk wvnypc yfzyfcr eeqkj
++nmcp fmkgfyi grfthau azw
++kkallxz rjke ukbt ixkhfb bktu jkre
++pxj mnwe djrjde gpsc enqz pdbydx cktfs jjeddr
++mgplj yyunujc vis odee ccesa yyg yjcnuyu doo utse
++flyy juvxomm vcdcyva lfyy ozxnuzw bmgns
++kmsypi zpbyiv rrycnb qos sslwyeo jgbyv njltzt fuwk nwfb ozcf xqnf
++sdcvgmy sdcvgmy hzv uyq sdcvgmy
++fyox vmgxahj ywaxbmm ugy ruwc mys yrjwr ozsxb vaq
++gjpyc sgdn kgm fbvq cziui nzy bwu ezjkkus jrag
++kxcr tgjxss xkcr bembjv rbbiw bwbri
++dcz rrhvdc zbonfzy ubjt
++rvq yjnzswt vatkopb xlj dwxig dqlt qts iva
++lylclc jptz rbidu lbt byxk
++lwre vwriwh afixsi vwriwh
++kmvbflr nfptw fbglxh pyas dxmn hemf segaz zrs
++dvbey zmj xfoi bma udtxhb
++yryng geiwgz bbrvjp ala
++olzicp olzicp qhhslry olzicp
++exf xdmwh xdwhm nhjsssn rmlkdb excguia fex
++xkwgeso htys sjdk jizciy gjjl phgqdjh wzdb izew zcrumu llxfp
++frkohf oifsm aisebkt ijsfkot ukk
++koqf xvoior tpe erfpnp npnx
++sneysk nsxki wpmhd mdor akrpvgz moicncj sbsj owfhj exw
++oqqbvk xztx gtxlms icmo
++lfy ltq dlzqlvi ovbrsa gzm nhcjq umbtgm nhcjq
++iuopdzq cqaeuu xuzngq kxlx laml slvvr frtml tvioiez vyoomw xickbqh
++ckahov mepeku gtaf gtaf
++tlto cnnz kzsbkjo kzsbkjo
++kqf comkf dvrkyl jdsqi rnwvb vxvd pok
++hncq xcx yuykfs egrruvw yqh smcou
++tywyq xeq cix yywqt jhzptci hybcoe
++zsw zsgot wnu sumd azmuos qawjaz rpf zkxgwdu iom igh
++vmxmelt gll ysbbt yboqoyz ykdglk cnypf otn owsz ipn epfeka bkmy
++wxjpce etzyavi whb sxzft bfu dgwnbgc nfw sxcteis qqpk
++kofv dgoyme vlza oxhbo lrqt uic tvfqiyy iaqm afnk
++nsmpg wkibdcz dxbw tlxzm zgwe nqwjji eacbhn blk
++shlgws eencr rtufah kjyvqw transt ecsq otbf
++obs xsjceex ffqj sob djpq jcda zlskve
++rfqtle klarp mtzrx rasr eisqovk rpt vymibt zwrif ilsnd
++ldu ffd ldu tizfexr fwpmyan
++flxso tzec pzn flxso kzdouon tkvkj
++tvd arh qywql uev btvnpm
++wtwx kzafvk ybyzmhv mdbrphy vamlvr gbxhod tyulba krcqj ikotmla qfhpa
++bnfin ebngj agfdfzu rhjtj aaqzh fsyp nilar uwurjnu hhmso hhmso
++uanmesj vshh syosjdt xkormf syosjdt ifvytwl qnw vshh jkg
++epyzcn pgdxgye lecnx nebg jzdhvge hfy imiyft
++zonbcnv vuvg sxtuty zdhmiow lmud cuegzg
++bxgft mxhzrh unqd pqpsnce khykn qlb oujdxpq pxrd jzxjuxr tij
++qss mqirowz ijjswjm jjer utwn kuedqxx bxshuok qkfag dmfwcr
++jgln zdohd xitfbge xbokj xxeuv wqhvhjo erg cua fhc mhwy
++euo ousht ipxt tpzq vnbmlo wvbjpb yjg bwpjbv nzvsea aerhsqv
++axhmi bcf zdx vplso xhmai qsk psolv
++ydnpmyo pfba zmo nat ykwxvm ydnpmyo rtd uuvqqr hcfccbd rtd
++ytp guw ydmyf rww oucmpf gemhpj labc
++edpbefn awgg qzpe aat cupig
++mmi ghdaoh ibx fbyj gge vmmssen nplt mmqcra omcvm uwa fxypxfc
++kjaw mtijne cfmsigd zwcjjd ajxjlqr tbp bnilc
++fse ele vcsyiv bfe udny vznrao mgrjfgw
++hadl nikvvpf gmdg bkmgt ugj
++xkis qmr cgz nresp gms zrii coxkke vfsqiil
++wmicbf bkk wcwklfg vpcbeg kfmjab vabc dax tnao tnao fvvzeyq fqm
++bct tvj tra soo stqao kqua ikupoy wulcu nauxkkb pvqxy bfu
++wpz txdduxq gaehfki kxo lvjzpxu iqon swr eyihl nbbec
++fuphnbj bdtz huwu zdtb ilgzpa uyaut vpy viff tuuya
++cvusbh bgy apsao qsupha
++jtzlbd ljfvh wkjrw xsah sef jygb pqym zbcwok zdmug qpym
++hbibuax iorqc dqjrs daeb iorqc qiw sagyt rkc sagyt khbr
++shz mgn pqrdbm jvace gfhnq ann zosq wdwzmuf kswsg dzt brlavyo
++qiw cdvwds dckpruy pybjra lfvgfn cwj bajtud pojehb rzrzvwe
++txfyk zkgeeu zkgeeu zkgeeu wskcv nccoz
++eettnxq gbgr uiqonyz wqtgs ozfjbn gbgr
++svd thmmr rbbtxn sxkq isxlnhf tamdlbe bqrgvu nmpvlkc spko
++qmn rspbjme ikjddkq kdb ugpegi egipgu
++ufffijo revqpep zfw kwd pnya blqo rnntzx anpy
++piaeyf vbeye uuqd vbeye
++hamd hap ekk lgla twto
++isniinr crz sjpmfxn uskwj
++lzeofk tavbq ijcglqy lvy jliqcyg lwlip
++uhyyyw itlrf tdc iabeocv jzwnjh vqxll nefze pyrxmx eispxnm hzlksce
++ucuh mlam bhyej rgzkew ctbo iswqnvg
++ytmb toppqgp ytmb gqgpr gqgpr vps ebv
++eavn atkqltv bjvojs kaskr vqltakt uiktr xglc eyb rkkas fhnf eaorqm
++jmfipc ujggeh hdxpfa xtab ydkibi ycxn ujggeh icheh vpznael oprbf
++xazqxg khlemu awh uwz vhnixk vdcty hkk
++gcl kayi hfozask grpseyn zviy tzoum qywnr wqkhq
++ctrrcpw wqfbylp wqfbylp wqfbylp
++gtk lqohf hqeaku mdj zrfkmxn bcqgf msing
++luhpel kexokpx vojap ldaexs bbbtz
++oimnqb esg zyjmbfh dfyhcf khpo zjtgm yelztbs ugj zjtgm mxro xyfxpk
++dgtsu vvk wwfugbx aai zlxab beyxcg bpx chc bnxui
++irrwbo orwibr lqt qtl tqknh
++ihjsg ihjsg powwy pycyqo ihjsg
++xdcu outh fnqrc eihkss bdylm sjunib eihkss
++jpnw ycimse rffu ismyce uhxl feai
++yyodnh dvwshkx vulh pvxj ydhyno hyodny
++vuuweg pfguvyu orhei orhei wrm amkr xecja lmnveth
++wriwe xgtnvj tdmxf gadtqh bezjvz lifu
++euft tchbm xmtlwji tchbm
++cfi zudn zludl pwiu axe psed
++dbtfwf ajxcudj uaxdjcj dxuajjc zouyy
++fmycmej bqhe jyfecmm kkrv kcdvjoy
++grtb uzs rkxzt hivhic brtg hwyc lsl iivhch qbcp
++ymn xfpka hqm sldz dblvsoe
++qrcapma hntgmy difrkpk difrkpk xlsph
++flvqh akcw boxrz ywhq boxrz esnxzv boxrz
++zrvh jskaw mfs fkj
++abveb qxfnlfq abveb kbwiyvd abveb
++pgarl nbfrenx rnxgx bdlkix liltdm dzcokeg fubupcg iwp xfayp obfaz nevfw
++nuhvaci blyv fcsp adlanka sjy syj ysxl
++avwakn dkoya yzuszuk lqrr oqfyd dmgbhd lqrr
++pxa mcvtoug nlweso yffqc dtuagcd ovvrkz ggfhw wnlseo bpqbn ohxzs rxzo
++djkcl kbgyfir ogquot uoqotg jtmyd ohudvle xrnbt yvsln wykqt hntc xlrhqrb
++ykt tkxfmd exas kty
++zebstke msbbndq itmli ubexmht vekvd xbmb iajbj wac sta
++ptdg oftwo goiulah tfmsrqs jffxvnv ozaluj qlhqjy wyffa
++xeq ezmlpw xgno xorvfo yzq vwif wsi
++hdove hqbzhu pjrxlj uafuh rizlb advmkca
++jzk ddoisdh tfjh yuvikps ixpkf hnu
++kixa djx uksr ogxty dxj clda ukrs
++xgiy diwbvn vphdbg qnelyz tqptqig lenyzq ecsswj
++alx awj fpasmmg zukuh qaanvb too nvskuk too gnria
++suo suo brw nazq suo dqv
++tan uxiz oqa xyezcd lsaicjr bosiak rmmh
++bidpomf dimcj qekero wbrc lewt kmgmlao
++bciacj eye lxfpef cbdshd dhdsbc qwnhil iuokc
++zduefht lrgfjn nclksm wpjpjr hkeqd oprsjcw
++chhdr bram swdfjr yikqra xkzsloc otptp agec hhdrc uofljf toppt wpbyrwo
++bwlpb nishr knnrysj bvr ftnb iedskch weo
++czo hsfp wblh cru kzalun intt
++jvob rppz rkwv hgyhrqg
++sgo hued jnygge izf ztan kjgpcn fagff jsi ijcxzoi tgqjjp tgqjjp
++ltjq zidjy rfmy yevuaa nlhfyg xytdtle wsqvzzx wfflboo nawhv golhf xhsti
++bmtzlml xcbsquq vnfsux voep lkss ioim
++ntfffh gcncwu mmymn wkwlswa gcncwu iaeyumz
++kcgdm rbaau cwsoya pznnnn xzz zbbdlhw zxuelq xzz pjeq
++xrmnuct kwvykx khxr ioua xnmtrcu xrnctum ujq imnt ecee
++xjsgx fby fby fby ggtpgdm jqvuj qshewki tkml ymsazcq
++sdbyhwg kewtrte novhdcp wbuaoh dtytgtx zez whygbds hpg
++tjvaqo yrycda yrycda ldbp yrycda
++kloi tmsocmx dza sqtxc wgevs zlevs vtm
++ftnx drvdm ryjfdgw nerynh cwfjpa mddvr
++wsqjyn svg ncw aesn hvuq vybajti aesn bql atxhp ipu
++eye romgxj gumuke jwi jrf dtt kcj wmg waw
++ptltud oymklv fgnmbc ete apanovb vpt vyospi
++clkguhu rbxs lxtnmy ferdx qbmrpg pvojnj zbcffbp
++itngp dvtlq fzxp cxrf gbxxqp aafls pfe bpxgxq
++nmikrui ddsq srfilr gnuvghu mwnacz nlbdm zcjm uylgev umzu mftz nmikrui
++bow jmnxyen bow hvz
++lksibxk lefzh lksibxk nkxsi nkxsi pldvhk
++osjlzns pihvr zpeu zxjgjb xplykfk xplykfk
++hajmfss cardd kaddjw uicfde taue
++rgwdjra sgifh ggt mpzx usghkos oob fvzx ghnyxr sblcif
++dtu gnihpry kjdpiny xvax itmluk fxvgaap bei xuq wzcy rhb hailtgo
++wwob ueldq ueldq glxc umimwv onu dxhmhis ebottoa lnysfiu
++zfbyi eyq etaj idpbkf
++qshcfjb ozzqigv raztm ymcv sgivwoc kightf dcaglk udah fdm
++jmxr jrcnck enffwfl jycc jmxr cylnigo enffwfl
++bkslhv tykqw tykqw mbeqrbt tykqw
++vogf nhqltpt nhqltpt vogf kpc
++ryayz ddktu rfhkmx xok xninjcm ijcrw fxu
++cmezfj zaamjrs whlcuoo mug lcaqhkb ymkdci qexa onhgk pgy
++hcrcok qri fki wbiog ptj pmgtdt
++xsl mpfxwbz bmzxpwf hrysu bmfxwzp xfja
++gybzho ktokndy rzkbr jcnp ahicq weccg pgrodkt che vaglyn omhmpo
++vdv bngjox srs faymg xrmf enseu aygfm gvsd
++nuzi xodkbag eevovl bfjuv nuzi xmejqn
++kcswegw bpa dgil insf insf
++stg tklrut poi knurfpf
++pcs dgirfie yep lvkfk ype hntt athvad clfybsq ofjhegj epy qwawns
++wjtpgd wjtpgd vxnapp mwyfsm vxnapp rvcswcs jksa
++ckzslrg wdzeimw cqhp nfgk zgukvd yyt tra erkx wdzeimw
++hsww avl vkmzej hsww
++mum oczj jfew rag zjoc wjfe yqynjqt cbkcsgo mri
++vjhfqdi vjhfqdi npfa pzdmy utlyw bwvbfm nqdv iiap ygpky bwvbfm eocya
++ewkqi ckb yviuro mqz vtrdam yzkqzv ppbj lhmj blkafo juxvwke lvewc
++ljrewgx sutnb hfsavbu jofr ltml mjzkzz nmjii sutnb eonegt
++cxzv nepyrb wmejdo vwqi aeqys
++sbx fmne obzdz rdnfb gmb sbx ykcae hbzom ncwju rhpiao obzdz
++lsgfun cbmfjwk fya ktzxbwt
++ica bpsk bwjwkp obloxdx uwoqdo bnnhjuc tlsx qtaacp bdooxxl jamy ade
++psus wmtkg ikvfx fkvesj upqlhfs ueje nyt abxvo
++adlbl hzskbrp ooht nps
++wtcgnvy nvqtvx tvgnycw ntvcygw kkxcp zyjmpbh
++xfxww xsddqe ewvmgw qxqwy wpabtz ppe zuiw zubcc onaqii
++kkaeec xhcakul wrrvi dtlqfy ahqdilw bnt gwimw espaivx nam yfv
++lxz jtc nkwgz nbgsao olsck emtltf xidwcvm lcjxq
++eav dzh hnbp hnbp yeg
++egaq yvat kavsige csar zsi sptai
++pofijc ibdnoe caoazp azlnjk dqp chik lowll iby gpvjv ohm
++ors lexk zcneaj rmesx jman uqkb kvkq zfufmn
++qgsyzxd hlm juerg ortfzw hxjzg
++fxwy lcoc fyxw pzhynp yfn zdzrz
++datmws ckwghgr gbtyf lqrpfgl mbgpd dyjilr fgybt hxpg
++mxw facxdnu wxm urltwtf qfo wtpwrj
++esa srypq jauwv dpm wdgqq hrke icvudq bdmubb ellhfjh ttpjjd gxmg
++gvwvqwj cbzzuvj eckube adqinpa djutlue wcpw vrt ucqwu ekruwsn
++fhj fst zmtb yhwk dxlbozs fcb vjvuxin dxlbozs rixdvu
++egfoep cvq icd prwj icyg
++aojaa ezmcuf udreyi bja cyrtpl wjl
++gjeka bsbufp tbqqq vbmnqg sfqtgac odhq xzsxt
++yse gujdr ugjdr sye
++tax hntqw phf eixjwfh qkylnu nkyuql ugsuj
++wyh egum zizhfc jrq htbyug lop dsu
++exh vfdoosj ajrna jbiaz lqsgvks xklqgjv abtmdud
++juqc ormfa sab tucsfln detqfo feg kifsion juqc ovhra
++hvcrh oddhme omzmu vmy she xulvfa fecmgi
++ayo gspge nkmy yblsj lrsre nkmy pwocjz gdexqqx ovovm
++acy sqcz ijl htt yjsi rly vea bck
++bniafe yore xnh rkcfd hxfuzw xlr nkzmmcs ekwggiu kgoboi wfuzxh hwfxuz
++weq crkeq cccphe dtozviy kzkkdr yku cephcc ctq zbau dewpi
++vfla rzpl bnmx uvggon foivrb fval
++ziaove lawkpdn ddwl sxj krroj rqmffxv babb
++bdw dsifr kuueet hugddwt piz dwb sjixveg kmsoknq
++czl feyxf soyvbj tnmpjn kklwi akx nqepntc
++nrmhc tkkn jrxgc jrxgc tkkn
++ufzn mrhiapi qrme kjlf qrme xpp qrme loyzizz xqm coli
++qvaoye mysv ydfxr iixrw
++dql tqarux fxqfn haoinu lyati xml
++kyve obatly dgfjt fjz sqrz xlbst lgwlt zovih aepy otrpl oifid
++ymawam afgye lcnpkmv feilfws vonseh rxrdco
++tqij kuawg dmova slds imdtb sjsafo ffkzzl pxxenva wuakg efbgx
++yrwoaos vpw ijjpua jnbxl sev yvgdxzr mpqa vpe lboh sev
++krwdtd uglxtcz mljcgdk lqj fgpfle nuui cqk exr nuu oyn
++dwd nwt idhclm vgkh rpubq wybhapp
++hskhgpy gzvz jztbr jwv vcx vdjmnjr jrsp
++ikml ceuhcng biu zoo gra bnnforx abzan hwsmd lmki tsl yvogo
++kqfc younaz azvgfz gesajr tmwxvyb vmcdu dclwh rfjwhic slfym
++pbrhjml rsacryg jga qvgks neh fcq qmi mwb juezk mjteeg alkb
++pcj ujstl fkrqm eeczrle hbkcvm upbo mrb qrspjt
++jbq rrk xjl rgokbnx hor ogg szxqu hysy vqj piorq wtrtrdk
++bnq ntvhcrf vrm puer kde xaxkja sfxgjf
++pgcicus hqeqkkx xqekqhk qqkxhke
++puquxi hmeaehh oxe tasipw qzyg hyvy wcmpwe
++hvs fxq wvfy zjepsl dvrfxnc xnvg
++xle crcuc qkhnv crcuc oedez bjw pmwq
++xzzpiy cjwss jwscs apb bpa
++ydjhhf yeltadb lwi cjdcb ovaox xrdm vkxub
++zax xza admbc lvpzfeh auxn rwasj
++kebx eild nrskdr meja jxczomh gcne
+diff --git a/2017/day04/input_test b/2017/day04/input_test
+new file mode 100644
+index 0000000..3ae1927
+--- /dev/null
++++ b/2017/day04/input_test
+@@ -0,0 +1,3 @@
++aa bb cc dd ee
++aa bb cc dd aa
++aa bb cc dd aaa
+diff --git a/2017/day04/input_test2 b/2017/day04/input_test2
+new file mode 100644
+index 0000000..9b42446
+--- /dev/null
++++ b/2017/day04/input_test2
+@@ -0,0 +1,5 @@
++abcde fghij
++abcde xyz ecdab
++a ab abc abd abf
++iiii oiii ooii oooi oooo
++oiii ioii iioi iiio
+diff --git a/2017/day04/main.cpp b/2017/day04/main.cpp
+new file mode 100644
+index 0000000..3d98f0b
+--- /dev/null
++++ b/2017/day04/main.cpp
+@@ -0,0 +1,109 @@
++/* #include <stdio.h> */
++#include <cstdint>
++#include <iostream>
++#include <stdint.h>
++
++#include <sstream>
++#include <algorithm>
++#include <fstream>
++#include <istream>
++#include <string>
++#include <vector>
++#include <map>
++#include <set>
++#include <cmath>
++
++
++
++#ifndef TEST
++#define INPUT "./input"
++#else
++#define INPUT "./input_test"
++#endif
++
++int32_t part1(std::string fname) {
++    std::ifstream inp(fname);
++    std::string line;
++    auto res = 0;
++
++    while (std::getline(inp,line)) {
++        std::stringstream tmp(line);
++        std::string crnt_tok;
++        std::set<std::string> contents;
++        res+=1;
++        while (std::getline(tmp,crnt_tok,' ')){
++            if (contents.count(crnt_tok)) {
++                res-=1; break;
++            }
++            contents.insert(crnt_tok);
++        }
++    }
++    return res;
++}
++
++int32_t part2(std::string fname) {
++    std::ifstream inp(fname);
++    std::string line;
++    auto res = 0;
++
++    while (std::getline(inp,line)) {
++        std::stringstream tmp(line);
++        std::string crnt_tok;
++        std::set<std::string> contents;
++        res+=1;
++        while (std::getline(tmp,crnt_tok,' ')){
++            std::sort(crnt_tok.begin(),crnt_tok.end());
++            if (contents.count(crnt_tok)) {
++                res-=1; break;
++            }
++            contents.insert(crnt_tok);
++        }
++    }
++    return res;
++}
++
++int main (int argc, char *argv[]) {
++#ifdef TEST
++    auto test_part1_lambda = [](std::string fname,int32_t expected){
++        int32_t fn_res = part1(fname);
++        std::stringstream msg;
++        msg << "part1( "<< fname << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    int32_t passed_tests = 0;
++    std::vector<std::pair<std::string,int32_t>> tests = {
++        { "./input_test"    ,2  },
++        }; 
++    for( auto &t: tests ) {
++        try {
++            passed_tests += test_part1_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++
++    auto test_part2_lambda = [](std::string fname,int32_t expected){
++        int32_t fn_res = part2(fname);
++        std::stringstream msg;
++        msg << "part2( "<< fname << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    std::vector<std::pair<std::string,int32_t>> tests2 = {
++        { "./input_test2"    ,3  },
++        }; 
++    for( auto &t: tests2 ) {
++        try {
++            passed_tests += test_part2_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++#else
++    std::cout << "Part1 "<<part1(INPUT) << std::endl;
++    std::cout << "Part2 "<<part2(INPUT) << std::endl;
++#endif
++
++    return 0;
++}
+diff --git a/2017/day05/.swp b/2017/day05/.swp
+new file mode 100644
+index 0000000..620ab83
+Binary files /dev/null and b/2017/day05/.swp differ
+diff --git a/2017/day05/Makefile b/2017/day05/Makefile
+new file mode 100644
+index 0000000..aee669a
+--- /dev/null
++++ b/2017/day05/Makefile
+@@ -0,0 +1,5 @@
++all:
++	g++ main.cpp -o main -Werror -lm && ./main
++
++test:
++	g++ main.cpp -o main -DTEST -Werror -lm && ./main
+diff --git a/2017/day05/input b/2017/day05/input
+new file mode 100644
+index 0000000..8a8efcb
+--- /dev/null
++++ b/2017/day05/input
+@@ -0,0 +1,1017 @@
++2
++0
++0
++-2
++0
++1
++-2
++-1
++-6
++2
++-1
++2
++0
++2
++-13
++0
++-2
++-15
++-15
++-3
++-10
++-11
++1
++-5
++-20
++-21
++-14
++-21
++-4
++-9
++-29
++2
++-10
++-5
++-33
++-33
++-9
++0
++2
++-24
++0
++-26
++-24
++-38
++-28
++-42
++-14
++-42
++2
++-2
++-48
++-48
++-17
++-19
++-26
++-39
++0
++-15
++-42
++-3
++-19
++-19
++-7
++-1
++-11
++-5
++-17
++-46
++-15
++-43
++-22
++-31
++-60
++-59
++-71
++-58
++-39
++-66
++-74
++-11
++-18
++-68
++1
++-70
++-79
++-18
++-56
++-17
++0
++-52
++-79
++-86
++-90
++-74
++-89
++-20
++-30
++-65
++-2
++-47
++-42
++-33
++-35
++-61
++-4
++-101
++-38
++-8
++-26
++-37
++-56
++-30
++-36
++-55
++-87
++-85
++-58
++-22
++-9
++-81
++-119
++-94
++-81
++-83
++-24
++-105
++-21
++-69
++-11
++-7
++-114
++-60
++-74
++-19
++-126
++-66
++-106
++-5
++-112
++0
++-58
++-18
++-122
++-50
++-72
++-83
++-15
++-93
++-60
++-17
++-37
++-55
++-119
++-118
++-12
++-101
++-65
++-35
++-122
++-149
++-97
++-140
++-62
++-101
++-85
++-23
++-43
++-141
++-158
++-37
++-103
++-142
++1
++-112
++-55
++-139
++-90
++-5
++-75
++-73
++-171
++-4
++-39
++-4
++-135
++-126
++-40
++-74
++-161
++-125
++-174
++-90
++-129
++-126
++-166
++-106
++-16
++-51
++-54
++-135
++-37
++-21
++-103
++-73
++-64
++-59
++-88
++-153
++-196
++-123
++-98
++-36
++-193
++-164
++-111
++-81
++-49
++-87
++-91
++-191
++-219
++-103
++-217
++-107
++-87
++-82
++-23
++-157
++-56
++-20
++-149
++-133
++-53
++-37
++-199
++-85
++-133
++-12
++-228
++-15
++-217
++-106
++-52
++-179
++-118
++-54
++-70
++-99
++-160
++-24
++-71
++-55
++-7
++-105
++-174
++-187
++-226
++-210
++-55
++-130
++-137
++-255
++-259
++-117
++-10
++-162
++-61
++-19
++-54
++-225
++-23
++-84
++-183
++-262
++-44
++-215
++-268
++-201
++-89
++-3
++-241
++-277
++-8
++-177
++-31
++-269
++-35
++-132
++-175
++-253
++-85
++-286
++-265
++-292
++-196
++-132
++-212
++-131
++-117
++-196
++-245
++-294
++-32
++-20
++-184
++-246
++-171
++-64
++-220
++-3
++-179
++-186
++-51
++-276
++-203
++-191
++-205
++-141
++-304
++-186
++-273
++-299
++-17
++-46
++-254
++-126
++-268
++-163
++-69
++-326
++-192
++-279
++-293
++-220
++-20
++-137
++-330
++-8
++-53
++-49
++2
++-149
++-181
++-298
++-297
++-66
++-136
++-166
++-146
++-28
++-146
++-226
++-270
++-349
++-216
++-348
++-184
++-298
++-348
++-323
++-244
++-207
++-22
++-172
++-359
++-188
++-1
++-278
++-76
++-216
++-343
++-29
++-37
++-257
++-357
++-226
++-19
++-246
++-76
++-105
++-312
++-219
++-268
++0
++-230
++-379
++-357
++-69
++-1
++-30
++-321
++-212
++-262
++-297
++-86
++-102
++-390
++-384
++-98
++-294
++-359
++-326
++-58
++-296
++-104
++-309
++-244
++-308
++-116
++-148
++-134
++-307
++-307
++-207
++-391
++-312
++-209
++-334
++-225
++-193
++-345
++-224
++-299
++-110
++-414
++-252
++-302
++-142
++-239
++-376
++-54
++-227
++-126
++-154
++-263
++-18
++-387
++-214
++-129
++-163
++-151
++-325
++-401
++-382
++-329
++-288
++-283
++-376
++-211
++-221
++-448
++-292
++-187
++-76
++-84
++-342
++-162
++-251
++-110
++-66
++-349
++-435
++-380
++-82
++-281
++-29
++-61
++-402
++-287
++-118
++-428
++-429
++-403
++-324
++-391
++-203
++-374
++-397
++-352
++-462
++-440
++-89
++-209
++-133
++-436
++-187
++-142
++-299
++-402
++-210
++-217
++-50
++-456
++-177
++-335
++-204
++-338
++-146
++-82
++-379
++-332
++-148
++-370
++-188
++-42
++-351
++-219
++-89
++-129
++-388
++-42
++-338
++-169
++-104
++-508
++-43
++-432
++-99
++-484
++2
++-461
++-469
++-151
++-279
++-309
++-121
++-306
++-210
++-302
++-100
++-415
++-307
++2
++-111
++-432
++-457
++-299
++-95
++-327
++-508
++-327
++-211
++-319
++-83
++-340
++-474
++-160
++-494
++-351
++-177
++-514
++-198
++-177
++-45
++-364
++-232
++-432
++-137
++-467
++-11
++-253
++-237
++-367
++-42
++-442
++-14
++-323
++-489
++-466
++-389
++-362
++-195
++-110
++-170
++-394
++-234
++-296
++-296
++-469
++-275
++-2
++-413
++-149
++-477
++-543
++-435
++-255
++-259
++-152
++-73
++-47
++-72
++-252
++-499
++-305
++-169
++-406
++-280
++-287
++-43
++-20
++-242
++-271
++-336
++-500
++-341
++-354
++-559
++-364
++-126
++-173
++-444
++-555
++-532
++-532
++-369
++-468
++-315
++-469
++-506
++-151
++-202
++-459
++-139
++-434
++-383
++-353
++-13
++-272
++-517
++-629
++-573
++-502
++-337
++-454
++-376
++-288
++-430
++-503
++-482
++-327
++-418
++-623
++-576
++-412
++-416
++-457
++-84
++-251
++-466
++-520
++-262
++-642
++-329
++-308
++-145
++-391
++-189
++-226
++-48
++-167
++-626
++-325
++-288
++-432
++-615
++-149
++-414
++-387
++-622
++-260
++-200
++-483
++-531
++-22
++-82
++-308
++-593
++-271
++-134
++-431
++-190
++-460
++-434
++-558
++-166
++-136
++-404
++-10
++-225
++-397
++-375
++-371
++-654
++-374
++-137
++-659
++-413
++-117
++-602
++-585
++-601
++-451
++-171
++-296
++-437
++-505
++-675
++-153
++-286
++-28
++-515
++-221
++-124
++-662
++-516
++-119
++-390
++-78
++-372
++-490
++-403
++-341
++-623
++-264
++-672
++-94
++-238
++-250
++-382
++-526
++-360
++-170
++-109
++-228
++-226
++-70
++-519
++-481
++-174
++-471
++-9
++-497
++-488
++-337
++-729
++-72
++-489
++-717
++-426
++-159
++-436
++-600
++-84
++-1
++-742
++-258
++-346
++-205
++-427
++-479
++-243
++-358
++-90
++-482
++-471
++-234
++-131
++-108
++-670
++-740
++-748
++-427
++-563
++-691
++-354
++-427
++-755
++-708
++-389
++-741
++-125
++-723
++-274
++-464
++-223
++-497
++-182
++-167
++-83
++-387
++-464
++-195
++-131
++-161
++-213
++-671
++-491
++-66
++-138
++-121
++-498
++-408
++-429
++-643
++-803
++-118
++-561
++-217
++-282
++-400
++-396
++-434
++-501
++-134
++-409
++-162
++-696
++-14
++-269
++-663
++-531
++-620
++-208
++-71
++-511
++-421
++-371
++-797
++-454
++-273
++-167
++-261
++-618
++-769
++-738
++-71
++-239
++-117
++-204
++-149
++-820
++-222
++-337
++-383
++-181
++-433
++-765
++-367
++-286
++-152
++-59
++-673
++-333
++-238
++-121
++-16
++-614
++-630
++-196
++-306
++-703
++-363
++-296
++-366
++-515
++-673
++-90
++-421
++-474
++-794
++-522
++-842
++-185
++-732
++-642
++-830
++-19
++-735
++-153
++-814
++-654
++-550
++-175
++-626
++-148
++-661
++-876
++-601
++-822
++-692
++-784
++-761
++-738
++-144
++-672
++-16
++-572
++-484
++-851
++-849
++-41
++-59
++-700
++-586
++-323
++-504
++-156
++-755
++-408
++-10
++-228
++-116
++-174
++-860
++-837
++-796
++-392
++-380
++-403
++-886
++-360
++-200
++-38
++-544
++-448
++-281
++-218
++-132
++-571
++-650
++-666
++-332
++-130
++-618
++-306
++-272
++-95
++-110
++-804
++-25
++-61
++-114
++-369
++-675
++-58
++-341
++-543
++-477
++-936
++-617
++-684
++-803
++-40
++-285
++-919
++-72
++-685
++-318
++-107
++-210
++-926
++-600
++-130
++-707
++-355
++-221
++-951
++-687
++-599
++-745
++-889
++-10
++-188
++-687
++-191
++-789
++-44
++-774
++-53
++-738
++-889
++-332
++-575
++-838
++-975
++-224
++-720
++-910
++-478
++-35
++-740
++-549
++-911
++-624
++-596
++-865
++-485
++-476
++-348
++-664
++-674
++-597
++-839
++-698
++-746
++-527
++-95
++-623
++-662
++-795
++-287
++-969
++-21
++-730
++-191
++-866
+diff --git a/2017/day05/input_test b/2017/day05/input_test
+new file mode 100644
+index 0000000..7a76cf7
+--- /dev/null
++++ b/2017/day05/input_test
+@@ -0,0 +1,5 @@
++0
++3
++0
++1
++-3
+diff --git a/2017/day05/input_test2 b/2017/day05/input_test2
+new file mode 100644
+index 0000000..9b42446
+--- /dev/null
++++ b/2017/day05/input_test2
+@@ -0,0 +1,5 @@
++abcde fghij
++abcde xyz ecdab
++a ab abc abd abf
++iiii oiii ooii oooi oooo
++oiii ioii iioi iiio
+diff --git a/2017/day05/main.cpp b/2017/day05/main.cpp
+new file mode 100644
+index 0000000..3967f99
+--- /dev/null
++++ b/2017/day05/main.cpp
+@@ -0,0 +1,128 @@
++/* #include <stdio.h> */
++#include <cstdint>
++#include <iostream>
++#include <stdint.h>
++
++#include <sstream>
++#include <algorithm>
++#include <fstream>
++#include <istream>
++#include <string>
++#include <vector>
++#include <map>
++#include <set>
++#include <cmath>
++
++
++
++#ifndef TEST
++#define INPUT "./input"
++/* #define INPUT "./input_test" */
++#else
++#define INPUT "./input_test"
++#endif
++
++
++int32_t play_commands_part1(std::vector<int32_t> commands) {
++    int32_t idx = 0;
++    int32_t iterations = 0;
++
++    while (idx != commands.size()){
++        auto idx_old = commands[idx];
++        commands[idx] += 1;
++        idx += idx_old;
++        iterations += 1;
++    }
++    return iterations;
++}
++
++size_t play_commands_part2(std::vector<int32_t> commands) {
++    int32_t idx = 0;
++    size_t iterations = 0;
++
++    while (idx != commands.size()){
++        auto idx_old = commands[idx];
++        if (commands[idx] < 3) {
++            commands[idx] += 1; 
++        } else {
++            commands[idx] -= 1; 
++        }
++        idx += idx_old;
++        iterations += 1;
++    }
++    return iterations;
++}
++
++int32_t part1(std::string fname) {
++    std::ifstream inp(fname);
++    std::string line;
++    auto res = 0;
++    std::vector<int32_t> commands = {};
++
++    while (std::getline(inp,line)) {
++        int32_t cmd = 0;
++        sscanf(line.c_str(),"%d",&cmd);
++        commands.push_back(cmd);
++    }
++    return play_commands_part1(commands);
++}
++
++size_t part2(std::string fname) {
++    std::ifstream inp(fname);
++    std::string line;
++    auto res = 0;
++    std::vector<int32_t> commands = {};
++
++    while (std::getline(inp,line)) {
++        int32_t cmd = 0;
++        sscanf(line.c_str(),"%d",&cmd);
++        commands.push_back(cmd);
++    }
++    return play_commands_part2(commands);
++}
++
++int main (int argc, char *argv[]) {
++#ifdef TEST
++    auto test_part1_lambda = [](std::string fname,int32_t expected){
++        int32_t fn_res = part1(fname);
++        std::stringstream msg;
++        msg << "part1( "<< fname << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    int32_t passed_tests = 0;
++    std::vector<std::pair<std::string,int32_t>> tests = {
++        { "./input_test"    ,5  },
++        }; 
++    for( auto &t: tests ) {
++        try {
++            passed_tests += test_part1_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++
++    auto test_part2_lambda = [](std::string fname,int32_t expected){
++        int32_t fn_res = part2(fname);
++        std::stringstream msg;
++        msg << "part2( "<< fname << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    std::vector<std::pair<std::string,int32_t>> tests2 = {
++        { "./input_test2"    ,3  },
++        }; 
++    for( auto &t: tests2 ) {
++        try {
++            passed_tests += test_part2_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++#else
++    std::cout << "Part1 "<<part1(INPUT) << std::endl;
++    std::cout << "Part2 "<<part2(INPUT) << std::endl;
++#endif
++
++    return 0;
++}
+diff --git a/2017/day06/.swp b/2017/day06/.swp
+new file mode 100644
+index 0000000..620ab83
+Binary files /dev/null and b/2017/day06/.swp differ
+diff --git a/2017/day06/Makefile b/2017/day06/Makefile
+new file mode 100644
+index 0000000..aee669a
+--- /dev/null
++++ b/2017/day06/Makefile
+@@ -0,0 +1,5 @@
++all:
++	g++ main.cpp -o main -Werror -lm && ./main
++
++test:
++	g++ main.cpp -o main -DTEST -Werror -lm && ./main
+diff --git a/2017/day06/input b/2017/day06/input
+new file mode 100644
+index 0000000..deda22e
+--- /dev/null
++++ b/2017/day06/input
+@@ -0,0 +1 @@
++2 8 8 5 4 2 3 1 5 5 1 2 15 13 5 14
+diff --git a/2017/day06/input_test b/2017/day06/input_test
+new file mode 100644
+index 0000000..fd81a1c
+--- /dev/null
++++ b/2017/day06/input_test
+@@ -0,0 +1 @@
++0 2 7 0
+diff --git a/2017/day06/main.cpp b/2017/day06/main.cpp
+new file mode 100644
+index 0000000..6dbd3e5
+--- /dev/null
++++ b/2017/day06/main.cpp
+@@ -0,0 +1,123 @@
++/* #include <stdio.h> */
++#include <cstdint>
++#include <iostream>
++#include <stdint.h>
++
++#include <sstream>
++#include <algorithm>
++#include <fstream>
++#include <istream>
++#include <string>
++#include <vector>
++#include <map>
++#include <set>
++#include <cmath>
++
++
++
++#ifndef TEST
++#define INPUT "./input"
++/* #define INPUT "./input_test" */
++#else
++#define INPUT "./input_test"
++#endif
++
++size_t max_index(std::vector<int32_t> arr) {
++    size_t res = 0;
++    for(size_t i =0;i< arr.size();i++) {
++        if (arr[res] < arr[i]) {
++            res = i;
++        }
++    }
++    return res;
++}
++
++int32_t times(std::vector<int32_t> nums) {
++    int32_t res = 0;
++    std::set<std::string> visited;
++    std::vector<int32_t> crnt(nums);
++    while(visited.count(std::str(crnt.begin(), crnt.end()) == 0){
++        visited.insert(std::str(crnt.begin(), crnt.end());
++        auto idx = max_index(crnt);
++        auto add_to_all = crnt[idx] / crnt.size();
++        auto set_at_idx = crnt[idx] % crnt.size();
++        // we can just add to the index we are going to override it anyway
++        for(size_t i = 0;i < crnt.size();i++) {
++            crnt[i] += add_to_all;
++        }
++        crnt[idx] = set_at_idx;
++        res += 1;
++    }
++    return res;
++}
++
++int32_t part1(std::string fname) {
++    std::ifstream inp(fname);
++    std::string line;
++    std::vector <int32_t>numbers = {};
++
++    while (std::getline(inp,line)) {
++        char * to_parse = (char *)line.c_str();
++        printf("%s\n",to_parse);
++        auto offs = 0;
++        int32_t cmd;
++        while(sscanf(to_parse,"%d%n",&cmd,&offs)) {
++            to_parse += offs;
++            numbers.push_back(cmd);
++            /* printf("%d\n",cmd); */
++        }
++        break;
++    }
++
++    return times(numbers);
++}
++
++size_t part2(std::string fname) {
++    return 0;
++}
++
++int main (int argc, char *argv[]) {
++#ifdef TEST
++    auto test_part1_lambda = [](std::string fname,int32_t expected){
++        int32_t fn_res = part1(fname);
++        std::stringstream msg;
++        msg << "part1( "<< fname << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    int32_t passed_tests = 0;
++    std::vector<std::pair<std::string,int32_t>> tests = {
++        { "./input_test"    ,5  },
++        }; 
++    for( auto &t: tests ) {
++        try {
++            passed_tests += test_part1_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++
++    auto test_part2_lambda = [](std::string fname,int32_t expected){
++        int32_t fn_res = part2(fname);
++        std::stringstream msg;
++        msg << "part2( "<< fname << " ) != "<< fn_res;
++        if (fn_res != expected) throw std::logic_error(msg.str());
++        return 1;
++    };
++    std::vector<std::pair<std::string,int32_t>> tests2 = {
++        { "./input_test2"    ,3  },
++        }; 
++    for( auto &t: tests2 ) {
++        try {
++            passed_tests += test_part2_lambda(t.first,t.second);
++        } catch(const std::exception& e) {
++            std::cout << e.what() << std::endl;
++        }
++    }
++#else
++    std::cout << "Part1 "<<part1(INPUT) << std::endl;
++    /* std::cout << "Part2 "<<part2(INPUT) << std::endl; */
++#endif
++
++    return 0;
++}
