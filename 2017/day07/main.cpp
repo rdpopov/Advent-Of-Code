@@ -18,7 +18,7 @@
 #include <cmath>
 
 
-#define TEST
+/* #define TEST */
 
 #ifndef TEST
 #define INPUT "./input"
@@ -69,31 +69,49 @@ std::string part1(std::string fname) {
 class Tree{
     private:
         std::map<std::string,std::pair<std::pair<int32_t,int32_t>,std::vector<std::string>>> &tree;
+        bool balance_tree;
     public:
-        int32_t unbalanced_idx;
+        int32_t unbalanced_weight;
 
-    Tree(std::map<std::string,std::pair<std::pair<int32_t,int32_t>,std::vector<std::string>>> &inp):tree(inp) {}
+    Tree(std::map<std::string,std::pair<std::pair<int32_t,int32_t>,std::vector<std::string>>> &inp,bool balance_tree):tree(inp),balance_tree(balance_tree) {}
 
     int32_t eval_subree_weight(std::string &root_node) {
         auto this_node  = this->tree.find(root_node);
         int32_t res = this_node->second.first.first ;;
+
+        std::vector<std::pair<int32_t,int32_t>> costs;
         for (auto i = 0; i < this_node->second.second.size();i++) {
             auto cost = this->eval_subree_weight(this_node->second.second[i]);
+            costs.push_back({cost, this->tree.find(this_node->second.second[i])->second.first.first});
             res += cost;
         }
-        std::vector<int32_t> costs;
-        for (auto i = 0; i < this_node->second.second.size();i++) {
-            costs.push_back(tree.find(this_node->second.second[i])->second.first.second);
-        }
-        std::cout << root_node << " ";
-        for (auto a: costs) {
-            if (a!= costs[0]){
-                this->unbalanced_idx = this_node->second.first.first - abs(a - costs[0]);
-                std::cout << this_node->second.first.first <<" "<< abs(a - costs[0]) << " ";
+
+        if (this->balance_tree) {
+            auto max_elem = std::max_element(costs.begin(),costs.end());
+            auto min_elem = std::min_element(costs.begin(),costs.end());
+
+            if (max_elem != costs.end() && min_elem != costs.end() && max_elem->first != min_elem->first) {
+                auto count_max = 0;
+                auto count_min = 0;
+                std::for_each(costs.begin(),costs.end(),[&](std::pair<int32_t,int32_t> n) {
+                        if (n.first == max_elem->first) count_max += 1;
+                        });
+                std::for_each(costs.begin(),costs.end(),[&](std::pair<int32_t,int32_t> n) {
+                        if (n.first == min_elem->first) count_min += 1;
+                        });
+                // result would have to be adjusted here, otherwise unbalance
+                // will cascade through the upper levels and get overwritten
+                if (count_max > count_min) {
+                    this->unbalanced_weight = min_elem->second + std::abs(max_elem->first - min_elem->first);
+                    res += std::abs(max_elem->first - min_elem->first);
+                } else {
+                    this->unbalanced_weight = max_elem->second - std::abs(max_elem->first - min_elem->first);
+                    res -= std::abs(max_elem->first - min_elem->first);
+                }
+                /* printf("\n%d - %d  -> %d",max_elem->first,min_elem->first,min_elem->second); */
+                /* printf("\n%d - %d  -> %d\n",max_elem->first,min_elem->first,max_elem->second); */
             }
-            std::cout << a << " ";
         }
-        std::cout << std::endl ;
         this_node->second.first.second = res;
         return  res;
     }
@@ -113,14 +131,13 @@ size_t part2(std::string fname) {
         parsed.erase(parsed.begin(),parsed.begin() +2 );
         tree.insert({node,{{weight,0},parsed}});
     }
-    auto trav = Tree(tree);
+    auto trav = Tree(tree,true);
     trav.eval_subree_weight(root);
-    return  trav.unbalanced_idx;
+    return  trav.unbalanced_weight;
 }
 
 int main (int argc, char *argv[]) {
     std::cout << "Part1 "<<part1(INPUT) << std::endl;
     std::cout << "Part2 "<<part2(INPUT) << std::endl;
-    part2(INPUT);
     return 0;
 }
