@@ -1,3 +1,37 @@
+# Some notes on the solution
+- the state is represented by a single 64 bit integer,
+  - the separate floors are accessed by a union.
+  - this should be also VERY fast to copy, to produce new states or pass around.
+  - this should be also VERY fast to to checks if the state is valid, as it is a
+    simple bitwise operation.
+  - Format: 1 bit for where the elevator is, 7 for each floor for chips and
+    generators. The chips have one bit in abundance. This might be useful.
+
+- When new states are generated only the smallest are kept as they have items at
+  the highest, therefore closer to solution. (bits in the least significant
+  part.) But all generated states are counted as visited. We never have to go
+  back to those when we are deeper. Only a few are kept - 1000, can go as low as
+  400, and it is fast, but might be unreliable depending on input.
+
+- States are generated this way. 
+    - we have a counter from 1. If all those pass:
+        - if we can move it up or down and it has 2 or 1 raised bits (moving 1 or 2 things)
+        - bitwise AND with generators or chips passes
+        - if it has only 1 raised it is also moved.
+        - if it has only one raised and both checks for chips and generators
+          pass, then both are moved
+## Improvements that can be made
+
+- The moves needed to push n elements up a floor, is defined by this formula: 2*(n-1)-1.
+  Since this is already solved, if we get all elements to the highest floor
+  there are elements(in the example case that would be the third floor). We can
+  stop there, and return the sum of the formula and the current moves made.
+
+- The bit that is wasted with the chips, can be used to mark the desired floor.
+
+
+
+
 F4 .  .  .  .  .  
 F3 .  .  .  LG .  
 F2 .  HG .  .  .  
