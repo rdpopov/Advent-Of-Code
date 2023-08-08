@@ -5,4 +5,4 @@
  | + 5  | * * rust | * * rust | * * rust | * * rust | * * rust |
  | + 10 | * * rust | * * rust | * * rust | * * rust | * * rust |
  | + 15 | * * rust | * * rust | * * rust | * * rust | * * rust |
- | + 20 | * * rust | * * rust | _ _ rust | _ _ rust | _ _ rust |
+ | + 20 | * * rust | * * rust | * _ rust | _ _ rust | _ _ rust |
