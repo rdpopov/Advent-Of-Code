@@ -7,6 +7,8 @@ fn instruction_transform(s:String) -> String{
         "dec" | "tgl" => "inc".to_string(),
         "jnz" => "cpy".to_string(),
         "cpy" => "jnz".to_string(),
+        "nop" => "nop".to_string(),
+        "mul" => "mul".to_string(),
         _ => "woops".to_string()
     }
 }
@@ -36,11 +38,36 @@ fn Part1(INPUT_FILE: &str, reg_ov: Vec<(&str, i64)>) -> i64 {
                 }
                 IP += 1;
             }
+            "add" => {
+                let src: i64 = match registers.get(&instr[1]) {
+                    Some(x) => x.to_owned(),
+                    None => instr[1].parse::<i64>().unwrap(),
+                };
+                match registers.get_mut(&instr[2]) {
+                    Some(x) => *x += src,
+                    _ => panic!("No such key"),
+                }
+                IP += 1;
+            }
+            "mul" => {
+                let src: i64 = match registers.get(&instr[1]) {
+                    Some(x) => x.to_owned(),
+                    None => instr[1].parse::<i64>().unwrap(),
+                };
+                match registers.get_mut(&instr[2]) {
+                    Some(x) => *x *= src,
+                    _ => panic!("No such key"),
+                }
+                IP += 1;
+            }
             "dec" => {
                 match registers.get_mut(&instr[1]) {
                     Some(x) => *x -= 1,
                     _ => panic!("No such key"),
                 }
+                IP += 1;
+            }
+            "nop" => {
                 IP += 1;
             }
             "inc" => {
@@ -84,12 +111,12 @@ fn Part1(INPUT_FILE: &str, reg_ov: Vec<(&str, i64)>) -> i64 {
     }
     *registers.get(&"a".to_string()).unwrap()
 }
+
 fn main() {
-    // println!("Part1 {}", Part1("input", vec![("a",7)]));
-    println!("Part2 {}", Part1("input", vec![("a",12)]));
-    // println!("Part1 {}", Part1("input_test", vec![]));
-    // println!("Part2 {}", Part1("./input", vec![("c", 1)]));
+    println!("Part1 {}", Part1("./input", vec![("a",7)]));
+    println!("Part2 {}", Part1("./input", vec![("a",12)]));
 }
+
 mod test {
     #[test]
     fn test_example_input() {
