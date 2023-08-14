@@ -1,4 +1,4 @@
 all:
-	go run day01.go
+	go run day02.go
 test:
 	go test
