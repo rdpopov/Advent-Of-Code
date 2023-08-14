@@ -1,0 +1,8 @@
+# DAYS
+ | days | + 1      | + 2      | + 3      | + 4      | + 5     | 
+ | ---- | -------- | -------- | -------- | -------- | ------- | 
+ | + 0  | * * cpp  | * * cpp  | * * cpp  | * * cpp  | * * cpp | 
+ | + 5  | * * cpp  | * * cpp  | * * cpp  | * * cpp  | _ _ cpp | 
+ | + 10 | _ _ cpp  | _ _ cpp  | _ _ cpp  | _ _ cpp  | _ _ cpp | 
+ | + 15 | _ _ cpp  | _ _ cpp  | _ _ cpp  | _ _ cpp  | _ _ cpp | 
+ | + 20 | _ _ cpp  | _ _ cpp  | _ _ cpp  | _ _ cpp  | _ _ cpp | 
