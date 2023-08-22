@@ -41,13 +41,13 @@ func ItrIntsInFile(f *os.File) (func(*int) bool,error) {
     },nil
 }
 
-func Parser(iter func(*int) bool,yld chan int,clenaup bool) {
+func ParserPart1(iter func(*int) bool,yld chan int,clenaup bool) {
     var children int 
     var metadata_len int 
     iter(&children) 
     iter(&metadata_len)
     for i:= 0; i < children;i++ {
-        Parser(iter,yld,false)
+        ParserPart1(iter,yld,false)
     }
     for i:= 0; i < metadata_len;i++ {
         iter(&children)
@@ -57,7 +57,6 @@ func Parser(iter func(*int) bool,yld chan int,clenaup bool) {
         close(yld)
     }
 }
-
 
 func Part1 (fname string) int {
     var ret int
@@ -71,7 +70,7 @@ func Part1 (fname string) int {
         log.Fatal(err2)
     }
     var res = make(chan int)
-    go Parser(itr,res,true)
+    go ParserPart1(itr,res,true)
     for ;;{
         i , ok := <- res
         ret += i
@@ -83,7 +82,53 @@ func Part1 (fname string) int {
     return ret
 }
 
+func Part2 (fname string) int {
+    f,err:= os.Open(fname)
+    if err != nil {
+        log.Fatal("Could not open file")
+    }
+
+    var itr,err2 = ItrIntsInFile(f)
+    if err2!= nil {
+        log.Fatal(err2)
+    }
+    var res = ParserPart2(itr)
+    return res
+}
+
+func ParserPart2(iter func(*int) bool) int {
+    var children int
+    var metadata_len int
+    iter(&children)
+    iter(&metadata_len)
+    if children > 0 {
+        var res []int = make([]int, children)
+        for i:= 0; i < children;i++ {
+            res[i] = ParserPart2(iter)
+        }
+        var children_value int
+        var crnt_value int
+        for i:= 0; i < metadata_len;i++ {
+            iter(&crnt_value)
+            crnt_value --
+            if  0 <= crnt_value && crnt_value < children {
+                children_value += res[crnt_value]
+            }
+        }
+        return children_value
+    } else {
+        var res int
+        for i:= 0; i < metadata_len;i++ {
+            iter(&children)
+            res += children
+        }
+        return res
+    }
+}
+
 func main(){
     fmt.Printf("Part 1 %d\n", Part1("input_test"))
     fmt.Printf("Part 1 %d\n", Part1("input"))
+    fmt.Printf("Part 2 %d\n", Part2("input_test"))
+    fmt.Printf("Part 2 %d\n", Part2("input"))
 }
