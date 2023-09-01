@@ -11,7 +11,7 @@ import "testing"
 
 func Test30players5807(t *testing.T){
     // var lst List
-    got := Part1(6111,21)
+    got := Part1(5807,30)
     want := 37305
     if got != want {
         t.Errorf("got %d, wanted %d", got, want)
@@ -49,6 +49,24 @@ func Test13players7999(t *testing.T){
     // var lst List
     got := Part1(7999,13)
     want := 146373
+    if got != want {
+        t.Errorf("got %d, wanted %d", got, want)
+    }
+}
+
+func TestPart1RealInput(t *testing.T){
+    // var lst List
+    got := Part1(70769,418)
+    want := 402398
+    if got != want {
+        t.Errorf("got %d, wanted %d", got, want)
+    }
+}
+
+func TestPart2RealInput(t *testing.T){
+    // var lst List
+    got := Part1(70769*100,418)
+    want := 3426843186
     if got != want {
         t.Errorf("got %d, wanted %d", got, want)
     }
