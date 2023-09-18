@@ -29,7 +29,7 @@ type Car struct {
     crnt_dir int
     dir int
 }
-
+// this bellow dowsnt work , plz fix
 func (self *Car) Move () {
     self.x += dirs[self.crnt_dir].x
     self.y += dirs[self.crnt_dir].y
@@ -79,7 +79,7 @@ func CarFromRune(car rune,x int ,y int) Car {
 }
 
 
-func ParsePoints(fname string) []Car {
+func ParsePoints(fname string) ([][]rune, []Car) {
     var f, err = os.Open(fname)
     var cars []Car = make([]Car, 0)
     var grid [][]rune = make([][]rune,0)
@@ -109,21 +109,43 @@ func ParsePoints(fname string) []Car {
         log.Fatal(err)
     }
     PrintField(grid,cars)
-    return cars
+    return grid,cars
 }
+
 func PrintField(grid [][]rune,cars []Car) {
-    for _,l := range grid {
-        for _,v := range l {
-            fmt.Printf("%s",string(v))
+    for _y,l := range grid {
+        for _x,v := range l {
+            var printted = true
+            for _,c := range cars {
+                if c.x == _x && c.y == _y {
+                    fmt.Printf("*")
+                    printted = false
+                }
+            }
+            if printted {
+                fmt.Printf("%s",string(v))
+            }
         }
         fmt.Println()
     }
-    for i:=range cars {
-        fmt.Println(i)
+    for _,c := range cars {
+        fmt.Println(c)
     }
 }
 
-func MoveCars(grid [][]rune,points []Car) {
+func CheckCollisions(points []Car,point_idx int) (bool,int,int) {
+    for i := range points{
+        if i!=point_idx{
+            if points[point_idx].x == points[i].x &&
+            points[point_idx].y == points[i].y {
+                return true,points[i].x,points[i].x
+            }
+        }
+    }
+    return false,-1,-1
+}
+
+func MoveCars(grid [][]rune,points []Car) (bool,int,int) {
     for i:= range points {
         points[i].Move()
         var x = points[i].x; 
@@ -134,9 +156,27 @@ func MoveCars(grid [][]rune,points []Car) {
         if grid[y][x] == '/' || grid[y][x] == '\\' {
             points[i].Corner(grid[y][x])
         }
+        var has_collision,resx,resy  = CheckCollisions(points,i)
+        if has_collision{
+            return has_collision,resx,resy
+        }
     }
+    return false,-1,-1
+}
+
+func Part1(fname string) (int,int) {
+    var grid,points = ParsePoints(fname)
+    for i:=0;i<3;i++ {
+        var has_collision,resx,resy = MoveCars(grid,points)
+        if has_collision{
+            return resx,resy
+        }
+        PrintField(grid,points)
+    }
+    return -1,-1
 }
 
 func main() {
-    fmt.Printf("Cars: %d\n", ParsePoints("input_test"))
+    var x,y = Part1("input_test")
+    fmt.Printf("Cars: %d\n", x,y)
 }
