@@ -18,9 +18,9 @@ type Point struct {
 }
 var dirs = [...]Point {
     Point{x:1,  y:0},  // pos x
-    Point{x:0,  y:1},  // pos y
+    Point{x:0,  y:-1},  // pos y
     Point{x:-1, y:0},  // neg x
-    Point{x:0,  y:-1}, // neg x
+    Point{x:0,  y:1}, // neg x
 }
 
 type Car struct {
@@ -29,14 +29,14 @@ type Car struct {
     crnt_dir int
     dir int
 }
-// this bellow dowsnt work , plz fix
+// this bellow dowsnt work , plzfix
 func (self *Car) Move () {
     self.x += dirs[self.crnt_dir].x
     self.y += dirs[self.crnt_dir].y
 }
 
 func (self *Car) Turn () {
-    self.crnt_dir += self.dir
+    self.crnt_dir += (self.dir-1)
     self.crnt_dir %= 4
     self.dir += 1
     self.dir %= 3
@@ -46,9 +46,11 @@ func (self *Car) Corner (crn rune) {
     if crn == '\\' {
         if self.crnt_dir % 2 == 0{
             self.crnt_dir += 1
+            self.crnt_dir += 4
             self.crnt_dir %= 4
         } else {
             self.crnt_dir -= 1
+            self.crnt_dir += 4
             self.crnt_dir %= 4
         }
     }
@@ -59,6 +61,7 @@ func (self *Car) Corner (crn rune) {
             self.crnt_dir %= 4
         } else {
             self.crnt_dir += 1
+            self.crnt_dir += 4
             self.crnt_dir %= 4
         }
     }
@@ -166,11 +169,12 @@ func MoveCars(grid [][]rune,points []Car) (bool,int,int) {
 
 func Part1(fname string) (int,int) {
     var grid,points = ParsePoints(fname)
-    for i:=0;i<3;i++ {
-        var has_collision,resx,resy = MoveCars(grid,points)
-        if has_collision{
-            return resx,resy
-        }
+    for i:=0;i<10;i++ {
+        // var has_collision,resx,resy = MoveCars(grid,points)
+        MoveCars(grid,points)
+        // if has_collision{
+        //     return resx,resy
+        // }
         PrintField(grid,points)
     }
     return -1,-1
@@ -178,5 +182,5 @@ func Part1(fname string) (int,int) {
 
 func main() {
     var x,y = Part1("input_test")
-    fmt.Printf("Cars: %d\n", x,y)
+    fmt.Printf("Cars: %d %d \n", x,y)
 }
