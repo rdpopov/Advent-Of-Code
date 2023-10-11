@@ -1,0 +1,5 @@
+# dune init executable day03
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Workspace root: /home/users/mms00476/fun/Advent-Of-Code/2020/day03
+# Auto-detected concurrency: 12
