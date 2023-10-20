@@ -86,14 +86,14 @@ let foldByHashmap tbl start =
   let start_bag = Hashtbl.find tbl start in
   let rec traverse crnt_bag tb =
     match crnt_bag.content with
-    | [] -> 1
+    | [] -> 0
     | _ ->
       List.map
         (fun x ->
           let bg = Hashtbl.find tbl (fst x) in
-          let res = snd x * traverse bg (String.cat tb "\t") in
-          Printf.printf "%s%s -> %d\n" tb (fst x)  res; res
-          )
+          let res = snd x + (snd x * traverse bg (String.cat tb "\t")) in
+          Printf.printf "%s%s -> %d\n" tb (fst x) res;
+          res)
         crnt_bag.content
       |> List.fold_left ( + ) 0
   in
@@ -108,4 +108,4 @@ let part2 fname =
 
 part2 test;;
 part2 test2;;
-(* part2 input;; *)
+part2 input
