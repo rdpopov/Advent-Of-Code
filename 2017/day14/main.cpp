@@ -26,6 +26,8 @@
 #define UP_BITS(t) (!!(t & 0x1) + !!(t & 0x2) + !!(t & 0x4) + !!(t & 0x8))
 
 using vec = std::vector<int>;
+using mat =std::vector<std::vector<int>>;
+using pairset = std::set<std::pair<int,int>>;
 void swap_part1 (std::vector<int> *tape, int low, int size){
     auto norm = [&](int a){
         a += tape->size();
@@ -119,11 +121,86 @@ int32_t part1(std::string inp) {
     }
     return res;
 }
+#define VALID(p) (0<=p.first && p.first <=127  && 0<= p.second && p.second < 128)
+void bfs(mat *mesh,std::pair<int,int> origin) {
+    pairset visited;
+    pairset to_visit{origin};
+    while (!to_visit.empty()){
+        std::pair<int, int> cn = *to_visit.begin();
+        visited.insert(cn);
+        std::vector<std::pair<int,int>> neigh = {
+            {cn.first+0,cn.second+1},
+            {cn.first+1,cn.second+0},
+            {cn.first+0,cn.second-1},
+            {cn.first-1,cn.second+0},
+        };
+        for (auto a: neigh){
+            if (VALID(a) && (visited.find(a)==visited.end()) && (*mesh)[a.first][a.second]!=0){
+                to_visit.insert(a);
+            }
+        }
+        to_visit.erase(cn);
+    }
+    // clean up current group
+    for (auto a: visited){
+       (*mesh)[a.first][a.second] = 0;
+    }
+}
 
+int32_t part2(std::string inp) {
+    int res=0;
+    // prepare mesh
+    mat mesh = {};
+    mesh.reserve(128);
+    for(int i= 0; i<128;i++){
+        std::string to_hash = inp + "-" + std::to_string(i);
+        std::string hsh = hex_code(to_hash);
+        std::vector<int> crnt_line;
+        crnt_line.reserve(128);
+        for (auto a: hsh){
+            int value ;
+            switch (a) {
+                case 'a':
+                case 'b':
+                case 'c':
+                case 'd':
+                case 'e':
+                case 'f':
+                    value = a -'a' + 10;
+                    break;
+                default:
+                    value = a -'0';
+            }
+            if (value & 0x8) crnt_line.push_back(1);
+            else  crnt_line.push_back(0);
+            if (value & 0x4) crnt_line.push_back(1);
+            else  crnt_line.push_back(0);
+            if (value & 0x2) crnt_line.push_back(1);
+            else  crnt_line.push_back(0);
+            if (value & 0x1) crnt_line.push_back(1);
+            else  crnt_line.push_back(0);
+        }
+
+        mesh.push_back(crnt_line);
+    }
+
+    // kind of bfs
+    for (int y=0; y<128;y++){
+        for (int x=0; x<128;x++){
+            if (mesh[y][x] == 1){
+                bfs(&mesh,{y,x});
+                res++;
+            }
+        }
+    }
+
+    return res;
+}
 
 int main (int argc, char *argv[]) {
-    part1("flqrgnkx");
     std::cout << "Part 1 -> "<< part1("flqrgnkx") << std::endl;
     std::cout << "Part 1 -> "<< part1("uugsqrei") << std::endl;
+    std::cout << "Part 2 -> "<< part2("flqrgnkx") << std::endl;
+    std::cout << "Part 2 -> "<< part2("uugsqrei") << std::endl;
     return 0;
 }
