@@ -1,5 +1,4 @@
 /* #include <stdio.h> */
-#include <bits/types/struct_tm.h>
 #include <cstddef>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,60 +21,171 @@
 #include <set>
 #include <cmath>
 
-std::string spin(std::string inp,int cycle){
+void spin(std::string * inp,int cycle){
     int idx = 0;
-    std::string res(inp);
-    for (auto a: inp ){
-        res[(idx+cycle)%inp.length()] = a;
+    std::string res(*inp);
+    for (auto a: *inp ){
+        res[(idx+cycle)%inp->length()] = a;
         idx++;
     }
-    return res;
+    inp->replace(inp->begin(),inp->end(),res);
 }
 
-std::string part1 (std::string fname,std::string perm){
+class CommandIntr{
+    public:
+        virtual void exec(std::string *perm) = 0;
+};
+
+class Spin : public CommandIntr {
+/* class Spin { */
+    public:
+        void exec(std::string *perm) {
+            spin(perm,this->cycle);
+        }
+        Spin(std::string tok){
+            sscanf(tok.c_str(),"s%d",&(this->cycle));
+        };
+        ~Spin();
+    private:
+        int cycle;
+};
+
+class SwapIdx : public CommandIntr {
+/* class SwapIdx { */
+    public:
+        void exec(std::string *perm) {
+            int x1      = this->idx1 % perm->length();
+            int x2      = this->idx2 % perm->length();
+            char tmp    = (*perm)[x1];
+            (*perm)[x1] = (*perm)[x2];
+            (*perm)[x2] = tmp;
+        }
+        SwapIdx(std::string tok){
+            sscanf(tok.c_str(),"x%d/%d",&(this->idx1),&(this->idx2));
+        };
+        ~SwapIdx();
+    private:
+        int idx1;
+        int idx2;
+};
+
+class SwapChars : public CommandIntr {
+/* class SwapChars { */
+    public:
+        void exec(std::string * perm) {
+            int swch_pos_chc1 = perm->find(this->ch1);
+            int swch_pos_chc2 = perm->find(this->ch2);
+            (*perm)[swch_pos_chc1]= this->ch2;
+            (*perm)[swch_pos_chc2]= this->ch1;
+        }
+        SwapChars(std::string &tok){
+            sscanf(tok.c_str(),"p%c/%c",&(this->ch1),&(this->ch2));
+        };
+        ~SwapChars();
+    private:
+        char ch1;
+        char ch2;
+};
+
+std::vector<CommandIntr*> input_to_commands(std::string fname){
+    std::vector<CommandIntr*>  res;
     std::ifstream in (fname);
     std::string ln;
-    std::string res(perm);
+    std::stringstream line(ln);
+    std::string tok;
 
     while (std::getline(in,ln,'\n')) {
         std::stringstream line(ln);
         std::string tok;
         while (std::getline(line,tok,',')) {
-            std::cout<< tok<< "\n";
-            switch (tok[0]) {
-                case 's':{
-                    int cycle;
-                    sscanf(tok.c_str(),"s%d",&cycle);
-                    res = spin(res,cycle);
+            switch (tok[0]){
+                case 's':
+                    res.push_back(new Spin(tok));
                     break;
-                    }
-                case 'x':{
-                    int x1;
-                    int x2;
-                    sscanf(tok.c_str(),"x%d/%d",&x1,&x2);
-                    char tmp = res[x1];
-                    res[x1]= res[x2];
-                    res[x2]= tmp;
-                    break;}
-                case 'p':{
-                    char c1;
-                    char c2;
-                    sscanf(tok.c_str(),"x%c/%c",&c1,&c2);
-                    int swch_pos_c1 = res.find(c1);
-                    int swch_pos_c2 = res.find(c2);
-                    res[swch_pos_c1]= c2;
-                    res[swch_pos_c2]= c1;
+                case 'x':
+                    res.push_back(new SwapIdx(tok));
                     break;
-                         }
+                case 'p': 
+                    res.push_back(new SwapChars(tok));
+                    break;
             }
         }
     }
     return res;
 }
 
+std::string part1 (std::string fname,std::string _perm){
+    auto cmds = input_to_commands(fname);
+    std::string * perm = new std::string(_perm);
+    auto exc = [&](){
+    for(auto a: cmds){
+        a->exec(perm);
+    }};
+    exc();
+    return *perm;
+}
+
+std::string part2 (std::string fname,std::string _perm){
+    auto cmds = input_to_commands(fname);
+    std::string * perm = new std::string(_perm);
+    auto exc = [&](){
+    for(auto a: cmds){
+        a->exec(perm);
+    }};
+
+    std::map<std::string,uint64_t> keep {};
+    bool found_flag = true;
+#define MAXITER 1000000000
+    for(uint64_t i=0;i<MAXITER;i++){
+        if (found_flag && keep.find(*perm)!=keep.end()){
+            int period = i - keep[*perm];
+            if(period == 0){
+                // if period is 0 that means that processing achieved nothing ->
+                // therefore we can return current state, as it will not change
+                return *perm;
+            }
+            i = MAXITER - ((MAXITER - i)%period); // adjust i to be the start of
+                                                  // the last loop
+                                                  // it may be guaranteed
+            found_flag = false;
+        }
+        if (found_flag){
+            keep[*perm] = i;
+        }
+        exc();
+    }
+    return  *perm;
+}
+
+std::string part2_fast (std::string fname,std::string _perm){
+    auto cmds = input_to_commands(fname);
+    std::string * perm = new std::string(_perm);
+    auto exc = [&](){
+    for(auto a: cmds){
+        a->exec(perm);
+    }};
+
+    bool found_flag = true;
+#define MAXITER 1000000000
+    uint64_t idx_stop = MAXITER;
+    for(uint64_t i=1;i<idx_stop;i++){
+        exc();
+        if (found_flag && *perm == _perm){ // i think its guaranteed for the
+            idx_stop = i ? (MAXITER % i+1) : 0; // change loop stop condition
+            i = 0;
+            found_flag = false;
+        }
+    }
+    return  *perm;
+}
+
 int main (int argc, char *argv[]) {
-part1("./test","abcde");
     std::cout << "Part 1 -> "<< part1("./test","abcde") << std::endl;
-    /* std::cout << "Part 1 -> "<< part1("./input") << std::endl; */
+    std::cout << "Part 2 -> "<< part2("./test","abcde") << std::endl;
+    std::cout << "Part 2 fast -> "<< part2_fast("./test","abcde") << std::endl;
+
+    std::cout << "Part 1 -> "<< part1("./input","abcdefghijklmnop") << std::endl;
+    std::cout << "Part 2 -> "<< part2("./input","abcdefghijklmnop") << std::endl;
+    std::cout << "Part 2 fast -> "<< part2_fast("./input","abcdefghijklmnop") << std::endl;
     return 0;
 }
