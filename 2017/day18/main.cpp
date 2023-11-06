@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <vector>
 #include <map>
+#include <queue>
 #include <set>
 #include <cmath>
 
@@ -42,22 +43,27 @@ enum Command {
 
 class State {
     friend class Instr;
-    std::map<std::string,int> memory;
-    int lastEmited;
+    std::map<std::string,int64_t> memory;
+    std::queue<int64_t> lastEmited;
+    bool waiting;
+    int sends ;
     int ip;
     public:
-    State(): memory({}), lastEmited(0), ip(0){};
+    State(): memory({}), lastEmited(), ip(0), sends(0){};
     int IP(){
         return this->ip;
     }
-    int getToken(std::string tok_key) {
+    int Sends(){
+        return this->sends;
+    }
+    int64_t getToken(std::string tok_key) {
         if (tok_key.length()>0 && (std::isdigit(tok_key[0]) || tok_key[0] == '-' )){
             int ret;
             sscanf(tok_key.c_str(), "%d",&ret);
             /* printf("parsed %s -> %d\n",tok_key.c_str(),ret); */
             return ret;
         } else if(tok_key.length()>0) {
-            if (this->memory.find(tok_key)!= memory.end()){
+            if (this->memory.find(tok_key) == memory.end()){
                 this->memory.insert({tok_key,0});
             }
             return this->memory[tok_key];
@@ -66,17 +72,48 @@ class State {
         }
     }
 
-    void setToken(std::string tok_key,int val) {
+    bool isWaiting(){
+        return this->waiting;
+    }
+
+    void chanSend(State *other,uint64_t v){
+        if (this == other) { // we are sending to self
+            while (!this->lastEmited.empty()) {
+                this->lastEmited.pop();
+            }
+            this->lastEmited.push(v);
+        }
+        else { // we are sending from another 'thread'
+            this->sends++;
+            other->lastEmited.push(v);
+            other->waiting=false;
+            /* printf("size %d of queue in ptr %p\n",(int)lastEmited.size(),other); */
+        }
+    }
+
+    bool chanRecv(uint64_t *v){
+        if (!this->lastEmited.empty()){
+            *v = this ->lastEmited.front();
+            this->lastEmited.pop();
+            return true;
+        } else {
+            this->waiting=true;
+            return false;
+        }
+   }
+
+
+    void setToken(std::string tok_key,int64_t val) {
         if (tok_key.length() && (std::isdigit(tok_key[0]) || tok_key[0] == '-' )){
             return;
         } else if(tok_key.length()>0) {
-            if (this->memory.find(tok_key)!= memory.end()){
-                this->memory.insert({tok_key,0});
-            }
             this->memory[tok_key] = val;
         } else {
             throw "Wtf";
         }
+    }
+    void dumpMem(){
+        // impl dumping of mem
     }
 };
 
@@ -88,7 +125,7 @@ class Instr {
     Command cmd;
     std::string left;
     std::string right;
-    Instr(): cmd(Command::Non){};
+    Instr(): cmd(Command::Non) ,left(""), right(""){};
     ~Instr(){};
     Instr(std::string inp) {
         this->cmd = Command::Non;
@@ -99,71 +136,112 @@ class Instr {
         }
 
         if (iinp >> tmp) {
-            this->left = tmp;
+            this->left  = tmp;
+        } else {
+            this->left="";
         }
 
         if (iinp >> tmp) {
             this->right = tmp;
+        } else {
+            this->right="";
         }
     };
-    int exec(State *s){
-        int ip_increment = 1;
+
+    int exec_part1(State *s){
         int NZrecieved = 0 ;
-        /* std::cout<< s->ip << " " << this->cmd <<" "<<this->left <<" "<<this->right <<" "<<ip_increment<<" " << s->getToken("a") << std::endl; */
+        /* std::cout<< s->ip << "\t" << this->cmd <<"\t"<<this->left <<"\t"<<this->right  << std::endl; */
         switch (this->cmd) {
             case Add:
-                try  {
-                    s->setToken(this->left, s->getToken(this->left) + s->getToken(this->right));
-                }
-                catch (...){printf("in line : %d %s %s \n",__LINE__,this->left.c_str(),this->right.c_str()); }
+                s->setToken(this->left, s->getToken(this->left) + s->getToken(this->right));
                 break;
             case Jgz:
-                try {
-                    if (s->getToken(this->left)>0)
-                        ip_increment = s->getToken(this->right);
+                if (s->getToken(this->left)>0) {
+                    int jmp = s->getToken(this->right); 
+                    s->ip += s->getToken(this->right);
+                    return 0 ;
                 }
-                catch (...){printf("in line : %d \n",__LINE__); }
                 break;
             case Mod:
-                try {
-                    s->setToken(this->left, s->getToken(this->left) % s->getToken(this->right));
-                }
-                catch (...){printf("in line : %d \n",__LINE__); }
+                s->setToken(this->left, s->getToken(this->left) % s->getToken(this->right));
                 break;
             case Mul:
-                try {
-                    s->setToken(this->left, s->getToken(this->left) * s->getToken(this->right));
-                }
-                catch (...){printf("in line : %d \n",__LINE__); }
+                s->setToken(this->left, s->getToken(this->left) * s->getToken(this->right));
                 break;
             case Rcv:
-                try {
-                    if (s->lastEmited > 0) {
-                        NZrecieved = s->lastEmited;
-                        /* std::cout << "value of rcv " << s->lastEmited << "\n"; */
-                        s->setToken(this->left,s->lastEmited);
+                do {
+                    /* std::cout << "try recieve  pred " << s->getToken(this->left) <<" "<<this->left <<"\n"; */
+                    uint64_t ret = 0;
+                    s->chanRecv(&ret);
+                    if (s->getToken(this->left) != 0) {
+                        return ret;
                     }
-                }
-                catch (...){printf("in line : %d \n",__LINE__); }
+                    return ret;
+                } while(0);
                 break;
             case Set:
-                try{
-                   s->setToken(this->left, s->getToken(this->right));
-                }
-                catch (...){printf("in line : %d \n",__LINE__); }
+                s->setToken(this->left, s->getToken(this->right));
                 break;
             case Snd:
-                try {
-                    s->lastEmited = s->getToken(this->left);
+                {
+                    /* std::cout << "sendig " << s->getToken(this->left) <<"\n"; */
+                    s->chanSend(s, s->getToken(this->left));
                 }
-                catch (...) {printf("in line %d",__LINE__);}
                 break;
             case Non:
                 /* throw "Panic"; */
                 break;
         }
-        s->ip+=ip_increment;
+        s->ip++;
         return NZrecieved;
+    }
+
+    int exec_part2(State *ths,State *other ){
+        int NZrecieved = 0 ;
+        /* std::cout<< ths->ip << "\t" << this->cmd <<"\t"<<this->left <<"\t"<<this->right  << std::endl; */
+        switch (this->cmd) {
+            case Add:
+                ths->setToken(this->left, ths->getToken(this->left) + ths->getToken(this->right));
+                break;
+            case Jgz:
+                if (ths->getToken(this->left)>0) {
+                    int jmp = ths->getToken(this->right); 
+                    ths->ip += ths->getToken(this->right);
+                    return 0 ;
+                }
+                break;
+            case Mod:
+                ths->setToken(this->left, ths->getToken(this->left) % ths->getToken(this->right));
+                break;
+            case Mul:
+                ths->setToken(this->left, ths->getToken(this->left) * ths->getToken(this->right));
+                break;
+            case Rcv:
+                do {
+                    /* std::cout << "try recieve  pred " << ths->getToken(this->left) <<" "<<this->left <<"\n"; */
+                    uint64_t ret = 0;
+                    if (ths->chanRecv(&ret)) {
+                        ths -> setToken(this->left, ret);
+                        ths -> waiting = false;
+                    } else {
+                        return 0;
+                    }
+                } while(0);
+                break;
+            case Set:
+                ths->setToken(this->left, ths->getToken(this->right));
+                break;
+            case Snd:
+                {
+                    printf("sending %d \n",(int)ths->getToken(this->left));
+                    ths->chanSend(other, ths->getToken(this->left));
+                }
+                break;
+            case Non:
+                break;
+        }
+        ths->ip++;
+        return 0;
     }
 };
 
@@ -188,16 +266,48 @@ int part1(std::string fname){
         tape.push_back(Instr(line));
     }
 
-    while(state.IP() < tape.size()){
-        int emmited = tape[state.IP()].exec(&state);
+    while(-1 <state.IP() && state.IP() < tape.size()){
+        int emmited = tape[state.IP()].exec_part1(&state);
         if (emmited) return  emmited;
     };
     return 0;
 }
 
+int part2(std::string fname){
+    std::ifstream in(fname);
+    std::string line;
+    std::vector<Instr> tape = {};
+    State thr0;
+    State thr1;
+    thr0.setToken("p", 0);
+    thr1.setToken("p", 1);
+
+    while(std::getline(in,line)){
+        tape.push_back(Instr(line));
+    }
+
+    auto is_not_finished =[&](State *t){
+        return -1 <t->IP() && t->IP() < tape.size() && !t->isWaiting();
+    };
+
+    while( is_not_finished(&thr1) || is_not_finished(&thr0) ){
+        tape[thr0.IP()].exec_part2(&thr0,&thr1);
+        /* while (is_not_finished(&thr1)) { */
+        tape[thr1.IP()].exec_part2(&thr1,&thr0);
+        /* } */
+        if (thr1.isWaiting() && thr0.isWaiting()) {
+            printf("deadlock %d %d\n",thr0.IP(),thr1.IP());
+        }
+    };
+    return thr0.Sends();
+}
+
 int main (int argc, char *argv[]) {
-    std::cout << "Part 1 -> "<< part1("./test") << std::endl;
-    std::cout << "Part 1 -> "<< part1("./input") << std::endl;
+    /* std::cout << "Part 1 -> "<< part1("./test") << std::endl; */
+    /* std::cout << "Part 1 -> "<< part1("./input") << std::endl; */
+
+    std::cout << "Part 2 -> "<< part2("./test2") << std::endl;
+    /* std::cout << "Part 2 -> "<< part2("./input") << std::endl; */
 
 /*     std::cout << "Part 1 -> "<< part1("./input") << std::endl; */
 /*     std::cout << "Part 2 -> "<< part2("./input") << std::endl; */
