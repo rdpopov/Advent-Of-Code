@@ -112,7 +112,13 @@ class State {
             throw "Wtf";
         }
     }
+
     void dumpMem(){
+        std ::cout<<"memmory"<<std::endl;
+        for (auto a:this->memory) {
+            std::cout <<"("<< a.first <<" "<<a.second<<") ";
+        }
+        std ::cout<<std::endl;
         // impl dumping of mem
     }
 };
@@ -170,6 +176,7 @@ class Instr {
                 break;
             case Rcv:
                 do {
+                    s->dumpMem();
                     /* std::cout << "try recieve  pred " << s->getToken(this->left) <<" "<<this->left <<"\n"; */
                     uint64_t ret = 0;
                     s->chanRecv(&ret);
@@ -196,7 +203,7 @@ class Instr {
         return NZrecieved;
     }
 
-    int exec_part2(State *ths,State *other ){
+    int exec_part2(State *ths,State *other, int nr ){
         int NZrecieved = 0 ;
         /* std::cout<< ths->ip << "\t" << this->cmd <<"\t"<<this->left <<"\t"<<this->right  << std::endl; */
         switch (this->cmd) {
@@ -218,11 +225,15 @@ class Instr {
                 break;
             case Rcv:
                 do {
-                    /* std::cout << "try recieve  pred " << ths->getToken(this->left) <<" "<<this->left <<"\n"; */
+                    std::cout << "try recieve in "<<nr<<" pred in " <<  this->left <<"\n";
                     uint64_t ret = 0;
                     if (ths->chanRecv(&ret)) {
+                        std::cout << "before ";
+                        ths->dumpMem();
                         ths -> setToken(this->left, ret);
                         ths -> waiting = false;
+                        std::cout << "after ";
+                        ths->dumpMem();
                     } else {
                         return 0;
                     }
@@ -233,7 +244,7 @@ class Instr {
                 break;
             case Snd:
                 {
-                    printf("sending %d \n",(int)ths->getToken(this->left));
+                    printf("sending %d from %d \n",(int)ths->getToken(this->left),nr);
                     ths->chanSend(other, ths->getToken(this->left));
                 }
                 break;
@@ -289,25 +300,25 @@ int part2(std::string fname){
     auto is_not_finished =[&](State *t){
         return -1 <t->IP() && t->IP() < tape.size() && !t->isWaiting();
     };
-
+    /* return 0; */
     while( is_not_finished(&thr1) || is_not_finished(&thr0) ){
-        tape[thr0.IP()].exec_part2(&thr0,&thr1);
+        tape[thr0.IP()].exec_part2(&thr0,&thr1,0);
         /* while (is_not_finished(&thr1)) { */
-        tape[thr1.IP()].exec_part2(&thr1,&thr0);
+        tape[thr1.IP()].exec_part2(&thr1,&thr0,1);
         /* } */
         if (thr1.isWaiting() && thr0.isWaiting()) {
-            printf("deadlock %d %d\n",thr0.IP(),thr1.IP());
+            printf("deadlock %d %d\n",thr0.Sends(),thr1.Sends());
         }
     };
-    return thr0.Sends();
+    return thr1.Sends();
 }
 
 int main (int argc, char *argv[]) {
     /* std::cout << "Part 1 -> "<< part1("./test") << std::endl; */
     /* std::cout << "Part 1 -> "<< part1("./input") << std::endl; */
 
-    std::cout << "Part 2 -> "<< part2("./test2") << std::endl;
-    /* std::cout << "Part 2 -> "<< part2("./input") << std::endl; */
+    /* std::cout << "Part 2 -> "<< part2("./test2") << std::endl; */
+    std::cout << "Part 2 -> "<< part2("./input") << std::endl;
 
 /*     std::cout << "Part 1 -> "<< part1("./input") << std::endl; */
 /*     std::cout << "Part 2 -> "<< part2("./input") << std::endl; */
