@@ -1,8 +1,10 @@
 /* #include <stdio.h> */
 #include <cctype>
 #include <cstddef>
+#include <ios>
 #include <iterator>
 #include <ostream>
+#include <random>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,6 +82,12 @@ class Particle {
         }
 
         friend std::ostream& operator<<(std::ostream& os, Particle& p);
+        bool operator==(Particle &p){
+            return 
+                this->place.c[0] == p.place.c[0]&&
+                this->place.c[1] == p.place.c[1]&&
+                this->place.c[2] == p.place.c[2];
+        };
 };
 
 std::ostream& operator<<(std::ostream& os, Particle& p){
@@ -97,13 +105,11 @@ int part1(std::string fname){
     while(std::getline(in,line)){
         particles.push_back(Particle(line));
     }
-
     int mindist = particles[0].dist;
     int minidx = 0;
     while(iterations--) {
         mindist = particles[0].nxt();;
         minidx = 0;
-
         for(int n=1; n < particles.size();n++) {
             int dist = particles[n].nxt();
             if (dist <= mindist) {
@@ -116,13 +122,57 @@ int part1(std::string fname){
     return minidx;
 }
 
+void mark_dup(std::vector<Particle> &part,std::valarray<int> &mask ,int idx) {
+    int is_not_dup = 1;
+    if (mask[idx]==0){
+        return;
+    }
+
+    for (int i = 0; i < idx;i++){
+        if(part[i] == part[idx] && mask[i] && mask[idx]){
+            is_not_dup = 0;
+            mask[i] = 0;
+        }
+    }
+    for (int i = idx+1; i < part.size();i++){
+        if(part[i] == part[idx] && mask[i] && mask[idx]){
+            is_not_dup = 0;
+            mask[i] = 0;
+        }
+    }
+    mask[idx] = is_not_dup;
+}
+
 int part2(std::string fname){
-    return 0;
+    std::ifstream in(fname);
+    std::string line;
+    std::vector<Particle> part;
+    std::valarray<int> mask;
+
+    int iterations = 50;
+    while(std::getline(in,line)){
+        part.push_back(Particle(line));
+    }
+    mask.resize(part.size(),1);
+
+    int i = 0;
+    while(iterations--) {
+        for(auto &a: part){
+            a.nxt();
+        }
+        for (int i = 0; i < part.size();i++){
+            mark_dup(part, mask, i);
+        }
+    }
+
+    return mask.sum();
 }
 
 int main (int argc, char *argv[]) {
-    /* std::cout << "Part 1 -> \n"<< part1("./test") << std::endl; */
+    std::cout << "Part 1 -> "<< part1("./test") << std::endl;
     std::cout << "Part 1 -> "<< part1("./input") << std::endl;
+    std::cout << "Part 2 -> "<< part2("./test2") << std::endl;
+    std::cout << "Part 2 -> "<< part2("./input") << std::endl;
 
     return 0;
 }
