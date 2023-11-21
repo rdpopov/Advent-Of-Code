@@ -33,6 +33,7 @@ enum Kind {
 enum Command {
     Add=1,
     Jgz,
+    Prm,
     Jnz,
     Mod,
     Mul,
@@ -42,6 +43,16 @@ enum Command {
     Sub,
     Non,
 };
+
+int primenumber(int64_t number)
+{
+    for(int i=2; i<number; i++)
+    {
+       if(number%i==0)
+           return 0;
+    }
+    return 1;
+}
 
 class State {
     friend class Instr;
@@ -149,6 +160,10 @@ class Instr {
                 s->muls++;
                 s->setToken(this->left, s->getToken(this->left) * s->getToken(this->right));
                 break;
+            case Mod:
+                s->muls++;
+                s->setToken(this->left, s->getToken(this->left) % s->getToken(this->right));
+                break;
             case Set:
                 s->setToken(this->left, s->getToken(this->right));
                 break;
@@ -166,6 +181,7 @@ std::map<std::string,Command> Instr::cmd_translate = {
             {"add",Add},
             {"sub",Sub},
             {"jgz",Jgz},
+            {"prm",Prm},
             {"jnz",Jnz},
             {"mod",Mod},
             {"mul",Mul},
@@ -205,35 +221,25 @@ int part2(std::string fname) {
     while(-1 <state.IP() && state.IP() < tape.size()){
        tape[state.IP()].exec_part1(&state);
     };
+    state.dumpMem();
     return state.getToken("h");
 }
-int primenumber(int64_t number)
-{
-    for(int i=1; i<number; i++)
-    {
-       if(number%i==0)
-           return 0;
-    }  
-    return 1;
-}
+
+
 int tmp(){
     int64_t b = (57 * 100) + 100000;
     int64_t c = b + 17000;
     int h = 0;
     do{
         if(primenumber(b)) h++;
-        if (b-c == 0){
-            return h;
-        } else {
-            b += 17;
-        }
-    } while (true);
+        b += 17;
+    } while (b-c);
+    return h;
 }
 
 int main (int argc, char *argv[]) {
     std::cout << "Part 1 -> "<< part1("./input") << std::endl;
     std::cout << "Part 2 -> "<< part2("./input2") << std::endl;
-    std::cout << tmp();
 
     return 0;
 }
