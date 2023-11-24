@@ -1,0 +1,35 @@
+# Languages
+
+ | language  | paradigm                 | confidence |
+ | --------- | ------------------------ | ---------- |
+ | nim       | all                      | very high  |
+ | python    | all                      | very high  |
+ | rust      | all                      | very high  |
+ | c++       | all                      | very high  |
+ | c         | all                      | very high  |
+ | ocaml     | fn                       | high       |
+ | scheme    | fn                       | neutral    |
+ | js        | all                      | high       |
+ | php       | all                      | high       |
+ | bash      | fn/array                 | high       |
+ | go        | all                      | very high  |
+ | ada       | all ?                    | low        |
+ | lua       | all                      | very high  |
+ | J         | array/fn                 | very low   |
+ | APL       | array/fn                 | very low   |
+ | perl/raku | all                      | low        |
+ | pascal    | all                      | neutral    |
+ | Ruby      | all                      | neutral    |
+ | D         | ?                        | neutral    |
+ | Java      | oop                      | high       |
+ | Clojure   | fn                       | neutral    |
+ | Scala     | fn                       | high       |
+ | Groovy    | ?                        | neutral    |
+ | Dart      | ?                        | neutral    |
+ | R         | fn/array                 | high       |
+ | Haskell   | cock and ball torture/fn | high       |
+ | Lisp      | lisp                     | low        |
+ | Assembley | Turring                  | high*      |
+ | zig       | all                      | high      |
+
+ * *if the stask is a turing machine
