@@ -24,7 +24,6 @@ def part1(fname: str):
             _, nums = ln.split(':')
             winning, own = map(lambda x: list(
                 map(int, x.split())), nums.split('|'))
-            # print(winning, own)
             res += score_part1(winning, own)
     return res
 
@@ -33,9 +32,7 @@ def part2(fname: str):
     cards = []
     with open(fname) as f:
         for ln in f.readlines():
-            # id, nums = ln.split(':')
             _, nums = ln.split(':')
-            # id = int(id.split()[1])
             winning, own = map(lambda x: list(
                 map(int, x.split())), nums.split('|'))
             cards.append([score_part2(winning, own), 1])
@@ -43,7 +40,6 @@ def part2(fname: str):
     for i in range(max_cards):
         for iprm in range(i+1, min(i+cards[i][0]+1, max_cards)):
             cards[iprm][1] += cards[i][1]
-    # print(cards)
 
     return sum(map(lambda x: x[1], cards))
 
