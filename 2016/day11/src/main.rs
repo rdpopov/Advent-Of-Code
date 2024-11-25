@@ -303,7 +303,7 @@ type WinCond = fn(State, State) -> bool;
 fn Part1(s: State, cond: WinCond, depth: u8) -> u8 {
     let mut visited: HashMap<State, u8> = HashMap::new();
     let mut crnt_states: HashSet<State> = HashSet::new();
-    let prune_size = 1000; // can be lower but want to have a buffer
+    let prune_size = 550; // can be lower but want to have a buffer
     crnt_states.insert(s);
     visited.insert(s, 0);
     for dpth in 0..depth {
@@ -335,10 +335,13 @@ fn main() {
     //  |S |P |T |R |C |
     // G|0 |0 |1 |1 |1 |
     // M|0 |0 |2 |1 |1 |
-    let start: State = init_part1(0, &[0, 0, 2, 1, 1], &[0, 0, 1, 1, 1]);
+    //
+    let start: State = init_part1(0, &[0, 1, 1, 2, 2], &[0, 0, 0, 2, 2]);
+    // let start: State = init_part1(0, &[0, 0, 2, 1, 1], &[0, 0, 1, 1, 1]);
     println!("Part 1 {}", Part1(start, is_win, 200));
 
-    let start: State = init_part1(0, &[0, 0, 2, 1, 1, 0, 0], &[0, 0, 1, 1, 1, 0, 0]);
+    let start: State = init_part1(0, &[0, 1, 1, 2, 2, 0 ,0], &[0, 0, 0, 2, 2, 0 ,0]);
+    // let start: State = init_part1(0, &[0, 0, 2, 1, 1, 0, 0], &[0, 0, 1, 1, 1, 0, 0]);
     println!("Part 2 {}", Part1(start, is_win, 200));
 }
 
@@ -365,6 +368,7 @@ fn two_generators_input() {
     let start: State = init_part1(0, &[0, 0], &[1, 2]);
     assert_eq!(11, Part1(start, is_win, 11))
 }
+
 #[test]
 fn test_input_part1_is_win() {
     let start: State = init_part1(0, &[0, 0, 2, 1, 1], &[0, 0, 1, 1, 1]);
@@ -375,4 +379,16 @@ fn test_input_part1_is_win() {
 fn test_input_part2_is_win() {
     let start: State = init_part1(0, &[0, 0, 2, 1, 1, 0, 0], &[0, 0, 1, 1, 1, 0, 0]);
     assert_eq!(61, Part1(start, is_win, 200))
+}
+
+#[test]
+fn test_input_part1_ex2_is_win() {
+    let start: State = init_part1(0, &[0, 1, 1, 2, 2], &[0, 0, 0, 2, 2]);
+    assert_eq!(31, Part1(start, is_win, 200))
+}
+
+#[test]
+fn test_input_part2_ex2_is_win() {
+    let start: State = init_part1(0, &[0, 1, 1, 2, 2, 0 ,0], &[0, 0, 0, 2, 2, 0 ,0]);
+    assert_eq!(55, Part1(start, is_win, 200))
 }

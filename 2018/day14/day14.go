@@ -1,5 +1,5 @@
 package main
-
+ 
 import (
 	"fmt"
 )
@@ -86,8 +86,6 @@ func Part2(pattern string ,alloc int) int {
     }
     return -1
 }
-
-
 
 func main() {
     fmt.Printf("Score test Part1: %v \n", Part1(9))
