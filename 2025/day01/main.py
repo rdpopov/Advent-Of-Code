@@ -12,6 +12,7 @@ def part1(file: str) -> int:
             if pos == 0:
                 res +=1
     return file,res
+
 def sign(x: int) -> int:
     if x < 0:
         return -1
@@ -26,25 +27,27 @@ def part2(file: str) -> int:
             mul = 1 
             if line [0] == 'L':
                 mul = -1
-            rot = int(line[1:]) * mul
-            prv = pos
-            pos += rot
-            if sign(prv) + sign(pos) == 0:
-                res += (abs(rot) // 100 + 1)
-            elif abs(pos) >= 100:
-                res += abs(pos //100)
-            pos = pos % 100
+            rot = int(line[1:])
+            res += rot // 100
+            rot %= 100
+            rot *= mul
+            # print(f"{line} rot:{rot} ", end=' ')
+            # print(pos + rot ,end=' ')
+            if (pos != 0):
+                if (pos + rot > 100) or (pos + rot < 0):
+                    # print("0->\t",line,end=' ')
+                    res += 1
+            pos = (pos + rot) % 100
 
-            # print(pos)
             if pos == 0:
-                # print("zero", line , pos ,rot) 
                 res +=1
     return file,res
 
 def main():
-    print( part1('ex'))
-    print( part1('input'))
+    # print( part1('ex'))
+    # print( part1('input'))
 
+    # print( part2('ex2'))
     print( part2('ex'))
     print( part2('input'))
 
