@@ -36,7 +36,7 @@ def itr(field) -> int:
     spl = 0
     for i in range(len(field)-1):
         for j in range(len(field[i])):
-            if field[i][j] == '.' and field[i+1][j] == '|':
+            if field[i][j] == '|' and field[i+1][j] == '^':
                 spl += 1
     return spl
     
@@ -51,7 +51,7 @@ def part1(file: str) -> int:
 
 def main():
     print( part1('ex'))
-    # print( part1('input'))
+    print( part1('input'))
 
 if __name__ == "__main__":
     main()
