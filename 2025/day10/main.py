@@ -22,19 +22,14 @@ def lhsToNp(lhs:str):
 def lhs2ToNp(lhs:str):
     return list(map(int,lhs[1:-1].split(',')))
 
-def GenSolutionVecs(crnt, backtrack:int):
+def GenSolutionVecs(crnt,limits):
     res = list()
-    if backtrack == 0:
-        for i in range(crnt.shape[0]):
-            willAdd = crnt.copy()
-            willAdd[i]+=1
-            res.append(willAdd)
-    else:
-        for i in range(len(crnt)):
-            if crnt[i] > backtrack:
-                willAdd = crnt.copy()
-                willAdd[i]-= backtrack
-                res.append(willAdd)
+    for i in range(crnt.shape[0]):
+        willAdd = crnt.copy()
+        willAdd[i]+=1
+        print(i)
+        if limits[i] == 0 or willAdd[i] < limits[i]:
+            res.append((i,willAdd))
     return res
 
 class eq:
@@ -44,7 +39,13 @@ class eq:
         self.rhs = lhs2ToNp(rhs.strip())
 
     def __repr__(self):
-        return f"lhs{self.lhs}\nvecs:{' '.join(map(str,self.ops))}\n??:{self.rhs}"
+        res = ""
+        goal_1 = f"lhs{self.lhs}\n"
+        vecs = "vecs:\n"
+        for i,v in enumerate(self.ops):
+            vecs += f"{i}: {v}\n"
+        goal_2 = f"rhs{self.rhs}\n"
+        return vecs + goal_2 + str(self.ops.shape)
 
     def Part1Solve(self):
         for i in range(1,len(self.ops)+1):
@@ -53,41 +54,30 @@ class eq:
                     return i
 
     def Part2Solve(self):
-        sol = np.zeros(self.ops.shape[0])
-        past_solutions = set()
-        backtrack = 0
-        bmul = 1
-    
+        sol = np.array([0]*self.ops.shape[0])
+        limits = self.rhs.copy()
+
+
         while 1:
-            bestSol = sol.copy()
-            
-            for tmpSol in GenSolutionVecs(sol,backtrack*bmul):
-                if str(tmpSol) not in past_solutions:
-                    # print(tmpSol)
-                    tmpRes = tmpSol @ self.ops          # result with current solution vector
-                    after  = self.rhs - tmpRes          # difference to target
-                    if sum(after) == 0:
-                        return sum(tmpSol)
-                    if sum(after) == sum(abs(after)):   # if all are positive
-                        if sum(bestSol @ self.ops) < sum(tmpRes):
-                            bestSol = tmpSol
 
-            # break
-            if (bestSol == sol).all():
+            best = np.zeros(self.ops.shape[0])
+            found = False
+            for idx,tmpSol in GenSolutionVecs(sol,limits):
+                tmpRes = tmpSol @ self.ops
+                after  = self.rhs - tmpRes
+                if all(after == 0):
+                    return sum(tmpSol)
+                if all(after > 0):
+                    found = True
+                    if sum(after) < sum(self.rhs - (best @ self.ops)):
+                        best = tmpSol
+                else:
+                    limits[idx] = tmpSol[idx]-1
 
-                backtrack = 0
-                sol = np.zeros(self.ops.shape[0])
-
-                backtrack += 1
-                bmul = 1
-            if backtrack > sum(sol):
-                # return 0
-                return -1
+            if found:
+                sol = best
             else:
-                past_solutions.add(str(sol))
-                print(sol)
-                bmul = 0
-                sol = bestSol
+                sol = np.zeros(self.ops.shape[0])
 
         return sum(sol)
 
@@ -124,10 +114,10 @@ def part2(file: str) -> int:
         return file,res
 
 def main():
-    # print( part1('ex'))
+    print( part1('ex'))
     # print( part1('input'))
 
-    print( part2('ex2'))
+    print( part2('ex'))
     # print( part2('input'))
 
 if __name__ == "__main__":
